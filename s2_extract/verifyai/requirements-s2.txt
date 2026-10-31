@@ -1,0 +1,10 @@
+# S2 retrieval module dependencies (Mansimran).
+# This file is the authoritative install list for this stage, so a teammate's
+# edits to the shared requirements.txt can never break retrieval.
+requests>=2.31,<3
+pydantic>=2.6,<3
+pytest>=8,<10
+
+# --- optional / stretch only (do not install before the demo works) ---------
+# sentence-transformers>=2.7      # embedding backend for ranking.SentenceTransformerBackend
+# lxml>=5                         # faster HTML/XML parsing

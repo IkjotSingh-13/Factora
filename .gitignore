@@ -8,3 +8,7 @@ __pycache__/
 .cache/
 model_cache/
 *.db
+
+# --- S2 retrieval extras ---
+data/smoke_results.json
+data/*.local.json

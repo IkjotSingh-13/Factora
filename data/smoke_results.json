@@ -1,0 +1,487 @@
+{
+  "generated_at": "2026-10-31T16:26:46+00:00",
+  "mode": "live",
+  "cache": "disabled",
+  "config": {
+    "top_k": 5,
+    "per_source_limit": 5,
+    "max_per_domain": 2,
+    "weights": {
+      "semantic": 0.5,
+      "bm25": 0.3,
+      "rrf": 0.2
+    },
+    "timeout_s": 8.0,
+    "retries": 1,
+    "min_coverage": 0.34,
+    "relevance_scale": 1.45,
+    "total_deadline_s": 7.0,
+    "use_cache": false,
+    "offline": false,
+    "replay_snapshot": null,
+    "mock": false
+  },
+  "claims": [
+    {
+      "claim": "The Eiffel Tower is 330 metres tall.",
+      "evidence": [
+        {
+          "claim_id": null,
+          "url": "https://en.wikipedia.org/wiki/Eiffel_Tower",
+          "domain": "en.wikipedia.org",
+          "title": "Eiffel Tower - Wikipedia",
+          "text_or_snippet": "The tower is 330 metres (1,083 ft) tall , [9] about the same height as an 81- storey building, and the tallest structure in Paris. Its base is square, measuring 125 metres (410 ft) on each side.",
+          "published_at": null,
+          "source_kind": "web",
+          "relevance": 1.0
+        },
+        {
+          "claim_id": null,
+          "url": "https://place-du-trocadero.fr/en/eiffel-tower-height/",
+          "domain": "place-du-trocadero.fr",
+          "title": "Eiffel Tower Height 2026: 330 m (1,083 ft), Floor by Floor",
+          "text_or_snippet": "The official figures Eiffel Tower height The Eiffel Tower is 330 metres (1,083 feet) tall, antennas included. That has been its height since 15 March 2022, when a new digital radio antenna was set on top by helicopter. It was originally called the \"300-metre tower \". Here is the height of each floor, the key figures, and the story of those 30 extra metres.",
+          "published_at": null,
+          "source_kind": "web",
+          "relevance": 0.9706
+        },
+        {
+          "claim_id": null,
+          "url": "https://eiffeltowertravel.com/height-and-facts",
+          "domain": "eiffeltowertravel.com",
+          "title": "Eiffel Tower Height: 330m (1,083 ft) - Dimensions, Weight & Fun Facts",
+          "text_or_snippet": "How tall is the Eiffel Tower ? 330 metres (1,083 ft) with antenna, 300m structural height. Explore weight (7,300 tonnes), dimensions, 1,665 steps, 20,000 lights, and 50+ fascinating facts.",
+          "published_at": null,
+          "source_kind": "web",
+          "relevance": 0.8641
+        },
+        {
+          "claim_id": null,
+          "url": "https://en.wikipedia.org/wiki/Observation_tower",
+          "domain": "en.wikipedia.org",
+          "title": "Observation tower",
+          "text_or_snippet": "An observation tower is a tower built wholly or partly to provide an elevated vantage point from which people can look out over the surrounding landscape or cityscape, usually through an unobstructed 360-degree field of view. Unlike a watchtower, which is occupied for surveillance or fire detection over an extended period, a dedicated observation tower exists principally so that visitors may enjoy or study a panoramic view. Observation towers are typically at least 20 metres (66 ft) tall, so that they clear the surrounding tree canopy or built environment, and have historically been constructed in stone, brick, timber and iron; reinforced concrete, structural steel and glued laminated timber predominate in modern examples. Because a tall structure is expensive to build and maintain for viewing alone, observation functions are very often combined with another use. Many of the world's best-known observation towers are also broadcasting towers, and observation decks are routinely incorporated into water towers, church steeples, lighthouses, high-rise buildings and even the pylons of bridges. Admission fees and tower restaurants help to offset construction and running costs, and in man",
+          "published_at": null,
+          "source_kind": "encyclopedia",
+          "relevance": 0.5269
+        },
+        {
+          "claim_id": null,
+          "url": "http://dx.doi.org/10.58286/29732",
+          "domain": "dx.doi.org",
+          "title": "Instrumentation of the Eiffel Tower for Continuous Monitoring",
+          "text_or_snippet": "The Eiffel Tower stands as a historic and iconic monument in the city of Paris. With a total height of 330 meters and constructed with wrought iron, it features a lattice metal structure. Completed in 1889 after two years of construction, the tower was initially designed for a 20-year lifespan. Now over 130 years old and welcoming millions of visitors annually, it has become a compelling example of extending the lifespan of a structure through vigilant surveillance and maintenance. Historically, the Eiffel Tower's surveillance program primarily consisted of repeated comprehensive and detailed inspections. Since 2021, it has been equipped with sensors to continuously monitor its overall behaviour. This instrumentation includes motoring of the spire’s inclination, as well as monitoring displacements, deformations, and vibrations in its four pillars. Temperature and humidity measurements ar",
+          "published_at": "2024-06-29",
+          "source_kind": "academic",
+          "relevance": 0.5092
+        }
+      ],
+      "audit": {
+        "queries": [
+          "Eiffel Tower 330 metres tall.",
+          "Eiffel Tower 330"
+        ],
+        "sources": [
+          {
+            "name": "wikipedia",
+            "kind": "encyclopedia",
+            "status": "ok",
+            "results": 10,
+            "used": 3,
+            "latency_ms": 1896,
+            "cached": false,
+            "query": "Eiffel Tower 330 | Eiffel Tower 330 metres tall.",
+            "error": null
+          },
+          {
+            "name": "pubmed",
+            "kind": "academic",
+            "status": "empty",
+            "results": 0,
+            "used": 0,
+            "latency_ms": 1470,
+            "cached": false,
+            "query": "Eiffel Tower 330 | Eiffel Tower 330 metres tall.",
+            "error": null
+          },
+          {
+            "name": "duckduckgo",
+            "kind": "web",
+            "status": "ok",
+            "results": 10,
+            "used": 6,
+            "latency_ms": 1738,
+            "cached": false,
+            "query": "Eiffel Tower 330 metres tall. | Eiffel Tower 330",
+            "error": null
+          },
+          {
+            "name": "openalex",
+            "kind": "academic",
+            "status": "ok",
+            "results": 10,
+            "used": 1,
+            "latency_ms": 5283,
+            "cached": false,
+            "query": "Eiffel Tower 330 | Eiffel Tower 330 metres tall.",
+            "error": null
+          }
+        ],
+        "sources_queried": 4,
+        "sources_ok": 3,
+        "sources_failed": 0,
+        "candidates_total": 30,
+        "dropped_low_coverage": 5,
+        "coverage_by_evidence": {
+          "https://en.wikipedia.org/wiki/Eiffel_Tower": 1.0,
+          "https://place-du-trocadero.fr/en/eiffel-tower-height": 1.0,
+          "https://eiffeltowertravel.com/height-and-facts": 1.0,
+          "https://en.wikipedia.org/wiki/Observation_tower": 0.6,
+          "https://dx.doi.org/10.58286/29732": 0.6
+        },
+        "mean_coverage": 0.84,
+        "dropped_duplicates": 8,
+        "dropped_over_domain_cap": 7,
+        "returned": 5,
+        "distinct_domains": 4,
+        "cache_hits": 0,
+        "duration_ms": 2775,
+        "notes": []
+      },
+      "wall_ms": 2775
+    },
+    {
+      "claim": "Vitamin C supplementation prevents the common cold in most adults.",
+      "evidence": [
+        {
+          "claim_id": null,
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8078152/",
+          "domain": "pmc.ncbi.nlm.nih.gov",
+          "title": "Vitamin C for preventing and treating the common cold - PMC",
+          "text_or_snippet": "The regular supplementation trials found that ≥ 0.2 g/day vitamin C reduced common cold duration by 8% in adults and by 14% in children, and 1 to 2 g/day vitamin C reduced common cold duration by 18% in children.",
+          "published_at": null,
+          "source_kind": "web",
+          "relevance": 0.9529
+        },
+        {
+          "claim_id": null,
+          "url": "https://pubmed.ncbi.nlm.nih.gov/32342851/",
+          "domain": "pubmed.ncbi.nlm.nih.gov",
+          "title": "Zinc Supplementation Reduces Common Cold Duration among Healthy Adults: A Systematic Review of Randomized Controlled Trials with Micronutrients Supplementation.",
+          "text_or_snippet": "The common cold had resulted in significant economic and social burden worldwide. The effect of vitamin C on preventing common cold in healthy adults has been investigated extensively, but not that of other micronutrients. Thus, we aim to assess the effects of providing micronutrients singly through oral means, on cold incidence, and/or management (in terms of cold duration and symptom severity) in healthy adults from systematically searched randomized controlled trials. From four electronic databases, 660 identified studies were screened and data were extracted from 20 studies (zinc, 10; vitamin D, 8; and vitamins A and E, 2). The quality of selected studies was assessed using the Cochrane risk of bias tool and certainty in the outcomes was assessed with the Grading of Recommendations Assessment, Development and Evaluation approach. The review found that micronutrients supplementation,",
+          "published_at": "2020-01-01",
+          "source_kind": "academic",
+          "relevance": 0.9242
+        },
+        {
+          "claim_id": null,
+          "url": "https://pubmed.ncbi.nlm.nih.gov/8974108/",
+          "domain": "pubmed.ncbi.nlm.nih.gov",
+          "title": "Vitamin C supplementation and common cold symptoms: problems with inaccurate reviews.",
+          "text_or_snippet": "In 1971, Linus Pauling carried out a meta-analysis of four placebo-controlled trials and concluded that it was highly unlikely that the decrease in the \"integrated morbidity of the common cold\" in vitamin C groups was caused by chance alone (P or = 1 g/d) alleviates common cold symptoms, indicating that the vitamin does indeed have physiologic effects on colds. However, widespread conviction that the vitamin has no proven effects on the common cold still remains. Three of the most influential reviews drawing this conclusion are considered in the present article. Two of them are cited in the current edition of the RDA nutritional recommendations as evidence that vitamin C is ineffective against colds. In this article, these three reviews are shown to contain serious inaccuracies and shortcomings, making them unreliable sources on the topic. The second purpose is to suggest possible concep",
+          "published_at": "1996-01-01",
+          "source_kind": "academic",
+          "relevance": 0.5519
+        },
+        {
+          "claim_id": null,
+          "url": "https://doi.org/10.1002/14651858.cd000980.pub4",
+          "domain": "doi.org",
+          "title": "Vitamin C for preventing and treating the common cold",
+          "text_or_snippet": "BACKGROUND: Vitamin C (ascorbic acid) for preventing and treating the common cold has been a subject of controversy for 70 years. OBJECTIVES: To find out whether vitamin C reduces the incidence, the duration or severity of the common cold when used either as a continuous regular supplementation every day or as a therapy at the onset of cold symptoms. SEARCH METHODS: We searched CENTRAL 2012, Issue 11, MEDLINE (1966 to November week 3, 2012), EMBASE (1990 to November 2012), CINAHL (January 2010 to November 2012), LILACS (January 2010 to November 2012) and Web of Science (January 2010 to November 2012). We also searched the U.S. National Institutes of Health trials register and WHO ICTRP on 29 November 2012. SELECTION CRITERIA: We excluded trials which used less than 0.2 g per day of vitamin C and trials without a placebo comparison. We restricted our review to placebo-controlled trials. D",
+          "published_at": "2013-01-29",
+          "source_kind": "academic",
+          "relevance": 0.5249
+        },
+        {
+          "claim_id": null,
+          "url": "https://en.wikipedia.org/wiki/Common_cold",
+          "domain": "en.wikipedia.org",
+          "title": "Common cold",
+          "text_or_snippet": "The common cold, or simply a cold, is a viral infectious disease of the upper respiratory tract that primarily affects the respiratory mucosa of the nose, throat, sinuses, and larynx. Signs and symptoms may appear in as little as two days after exposure to the virus. These may include coughing, sore throat, runny nose, sneezing, headache, fatigue, and fever. People usually recover in seven to ten days, but some symptoms may last up to three weeks. Occasionally, those with other health problems may develop pneumonia. When general symptoms are systemic and the disease is severe, the term \"flu-like\" or \"influenza-like illness\" can be used instead.",
+          "published_at": null,
+          "source_kind": "encyclopedia",
+          "relevance": 0.3996
+        }
+      ],
+      "audit": {
+        "queries": [
+          "Vitamin C supplementation prevents common cold adults.",
+          "Vitamin C"
+        ],
+        "sources": [
+          {
+            "name": "wikipedia",
+            "kind": "encyclopedia",
+            "status": "ok",
+            "results": 10,
+            "used": 1,
+            "latency_ms": 1598,
+            "cached": false,
+            "query": "Vitamin C | Vitamin C supplementation prevents common cold adults.",
+            "error": null
+          },
+          {
+            "name": "openalex",
+            "kind": "academic",
+            "status": "ok",
+            "results": 10,
+            "used": 1,
+            "latency_ms": 4676,
+            "cached": false,
+            "query": "Vitamin C | Vitamin C supplementation prevents common cold adults.",
+            "error": null
+          },
+          {
+            "name": "duckduckgo",
+            "kind": "web",
+            "status": "empty",
+            "results": 5,
+            "used": 1,
+            "latency_ms": 1405,
+            "cached": false,
+            "query": "Vitamin C | Vitamin C supplementation prevents common cold adults.",
+            "error": null
+          },
+          {
+            "name": "pubmed",
+            "kind": "academic",
+            "status": "ok",
+            "results": 10,
+            "used": 2,
+            "latency_ms": 5019,
+            "cached": false,
+            "query": "Vitamin C | Vitamin C supplementation prevents common cold adults.",
+            "error": null
+          }
+        ],
+        "sources_queried": 4,
+        "sources_ok": 3,
+        "sources_failed": 0,
+        "candidates_total": 35,
+        "dropped_low_coverage": 4,
+        "coverage_by_evidence": {
+          "https://pmc.ncbi.nlm.nih.gov/articles/PMC8078152": 1.0,
+          "https://pubmed.ncbi.nlm.nih.gov/32342851": 1.0,
+          "https://pubmed.ncbi.nlm.nih.gov/8974108": 0.8,
+          "https://doi.org/10.1002/14651858.cd000980.pub4": 0.8,
+          "https://en.wikipedia.org/wiki/Common_cold": 0.4
+        },
+        "mean_coverage": 0.8,
+        "dropped_duplicates": 1,
+        "dropped_over_domain_cap": 17,
+        "returned": 5,
+        "distinct_domains": 4,
+        "cache_hits": 0,
+        "duration_ms": 3339,
+        "notes": []
+      },
+      "wall_ms": 3339
+    },
+    {
+      "claim": "The Great Wall of China is visible from space with the naked eye.",
+      "evidence": [
+        {
+          "claim_id": null,
+          "url": "https://www.halleyspace.com/great-wall-of-china-visible-from-space-myth/",
+          "domain": "halleyspace.com",
+          "title": "No, the Great Wall of China is not visible from space",
+          "text_or_snippet": "The claim that the Great Wall of China is visible from space , or even from the Moon, with the naked eye is false. At low Earth orbit the wall is about ten times narrower than the human eye can resolve, and its stone blends into the surrounding terrain.",
+          "published_at": null,
+          "source_kind": "web",
+          "relevance": 1.0
+        },
+        {
+          "claim_id": null,
+          "url": "https://checkthisfact.com/factchecks/the-great-wall-of-china-is-visible-from-space",
+          "domain": "checkthisfact.com",
+          "title": "Great Wall of China visible from space - false",
+          "text_or_snippet": "Summary The Great Wall of China cannot be seen with the naked eye from space ; astronauts and NASA have confirmed it is not visible from low Earth orbit except under exceptional conditions, and it is certainly not visible from the Moon. The claim is a persistent myth.",
+          "published_at": null,
+          "source_kind": "web",
+          "relevance": 1.0
+        },
+        {
+          "claim_id": null,
+          "url": "https://www.britannica.com/question/Can-you-see-the-Great-Wall-of-China-from-space",
+          "domain": "britannica.com",
+          "title": "Can you see the Great Wall of China from space? | Britannica",
+          "text_or_snippet": "You typically can't see the Great Wall of China from space . A popular myth, the claim was disproved when astronauts stated that the Great Wall of China was not visible with the naked eye from the Moon.",
+          "published_at": null,
+          "source_kind": "web",
+          "relevance": 1.0
+        },
+        {
+          "claim_id": null,
+          "url": "https://doi.org/10.5281/zenodo.19489855",
+          "domain": "doi.org",
+          "title": "Claim Verification: \"The Great Wall of China is the only man-made object visible from space with the naked eye.\" — Disproved",
+          "text_or_snippet": "Automated fact-verification of the claim: \"The Great Wall of China is the only man-made object visible from space with the naked eye.\" Verdict: DISPROVED Key Findings Both sub-claims are false. The Great Wall of China is NOT visible from space with the naked eye, AND it is NOT the only man-made object that could be — many others (highways, dams, cities) are routinely visible from low Earth orbit. NASA officially states the wall is \"difficult or impossible to see from Earth orbit without high-powered lenses\" (B1). Former NASA astronaut Jeffrey Hoffman confirms: \"I have spent a lot of time looking at the Earth from space, including numerous flights over China, and I never saw the wall\" (B2). Multiple man-made structures — highways, dams, and cities — are visible from space without magnification (B4), directly contradicting the \"only\" claim. Files proof.py — Re-runnable Python verification",
+          "published_at": "2026-04-10",
+          "source_kind": "academic",
+          "relevance": 1.0
+        },
+        {
+          "claim_id": null,
+          "url": "https://en.wikipedia.org/wiki/Comet_NEOWISE",
+          "domain": "en.wikipedia.org",
+          "title": "Comet NEOWISE",
+          "text_or_snippet": "C/2020 F3 (NEOWISE) or Comet NEOWISE is a long period comet with a near-parabolic orbit discovered on March 27, 2020, by astronomers during the NEOWISE mission of the Wide-field Infrared Survey Explorer (WISE) space telescope. At that time, it was an 18th-magnitude object, located 2.0 AU (300 million km; 190 million mi) away from the Sun and 1.7 AU (250 million km; 160 million mi) away from Earth. NEOWISE is known for being the brightest comet in the northern hemisphere since Comet Hale–Bopp in 1997. It was widely photographed by professional and amateur observers and was even spotted by people living near city centers and areas with light pollution. While it was too close to the Sun to be observed at perihelion, it emerged from perihelion around magnitude 0.5 to 1, making it bright enough to be visible to the naked eye. Under dark skies, it could be seen with the naked eye and remained visible to the naked eye throughout July 2020.",
+          "published_at": null,
+          "source_kind": "encyclopedia",
+          "relevance": 0.6912
+        }
+      ],
+      "audit": {
+        "queries": [
+          "Great Wall China visible space naked eye.",
+          "Great Wall China"
+        ],
+        "sources": [
+          {
+            "name": "wikipedia",
+            "kind": "encyclopedia",
+            "status": "ok",
+            "results": 10,
+            "used": 1,
+            "latency_ms": 1869,
+            "cached": false,
+            "query": "Great Wall China visible space naked eye. | Great Wall China",
+            "error": null
+          },
+          {
+            "name": "openalex",
+            "kind": "academic",
+            "status": "ok",
+            "results": 10,
+            "used": 1,
+            "latency_ms": 3948,
+            "cached": false,
+            "query": "Great Wall China | Great Wall China visible space naked eye.",
+            "error": null
+          },
+          {
+            "name": "pubmed",
+            "kind": "academic",
+            "status": "empty",
+            "results": 5,
+            "used": 0,
+            "latency_ms": 2997,
+            "cached": false,
+            "query": "Great Wall China visible space naked eye. | Great Wall China",
+            "error": null
+          },
+          {
+            "name": "duckduckgo",
+            "kind": "web",
+            "status": "ok",
+            "results": 6,
+            "used": 3,
+            "latency_ms": 1462,
+            "cached": false,
+            "query": "Great Wall China | Great Wall China visible space naked eye.",
+            "error": null
+          }
+        ],
+        "sources_queried": 4,
+        "sources_ok": 3,
+        "sources_failed": 0,
+        "candidates_total": 31,
+        "dropped_low_coverage": 2,
+        "coverage_by_evidence": {
+          "https://halleyspace.com/great-wall-of-china-visible-from-space-myth": 1.0,
+          "https://checkthisfact.com/factchecks/the-great-wall-of-china-is-visible-from-space": 1.0,
+          "https://britannica.com/question/Can-you-see-the-Great-Wall-of-China-from-space": 1.0,
+          "https://doi.org/10.5281/zenodo.19489855": 1.0,
+          "https://en.wikipedia.org/wiki/Comet_NEOWISE": 0.5714
+        },
+        "mean_coverage": 0.9143,
+        "dropped_duplicates": 0,
+        "dropped_over_domain_cap": 14,
+        "returned": 5,
+        "distinct_domains": 5,
+        "cache_hits": 0,
+        "duration_ms": 2982,
+        "notes": []
+      },
+      "wall_ms": 2982
+    },
+    {
+      "claim": "The VerifyAI team invented the quantum banana protocol in 2026.",
+      "evidence": [],
+      "audit": {
+        "queries": [
+          "VerifyAI team invented quantum banana protocol 2026.",
+          "VerifyAI 2026."
+        ],
+        "sources": [
+          {
+            "name": "openalex",
+            "kind": "academic",
+            "status": "empty",
+            "results": 5,
+            "used": 0,
+            "latency_ms": 3136,
+            "cached": false,
+            "query": "VerifyAI 2026. | VerifyAI team invented quantum banana protocol 2026.",
+            "error": null
+          },
+          {
+            "name": "wikipedia",
+            "kind": "encyclopedia",
+            "status": "error",
+            "results": 0,
+            "used": 0,
+            "latency_ms": 3135,
+            "cached": false,
+            "query": "VerifyAI 2026. | VerifyAI team invented quantum banana protocol 2026.",
+            "error": "request failed for https://en.wikipedia.org/w/api.php: HTTP 429 from https://en.wikipedia.org/w/api.php"
+          },
+          {
+            "name": "pubmed",
+            "kind": "academic",
+            "status": "empty",
+            "results": 5,
+            "used": 0,
+            "latency_ms": 3276,
+            "cached": false,
+            "query": "VerifyAI team invented quantum banana protocol 2026. | VerifyAI 2026.",
+            "error": null
+          },
+          {
+            "name": "duckduckgo",
+            "kind": "web",
+            "status": "empty",
+            "results": 0,
+            "used": 0,
+            "latency_ms": 2016,
+            "cached": false,
+            "query": "VerifyAI team invented quantum banana protocol 2026. | VerifyAI 2026.",
+            "error": null
+          }
+        ],
+        "sources_queried": 4,
+        "sources_ok": 0,
+        "sources_failed": 1,
+        "candidates_total": 10,
+        "dropped_low_coverage": 6,
+        "coverage_by_evidence": {},
+        "mean_coverage": 0.0,
+        "dropped_duplicates": 0,
+        "dropped_over_domain_cap": 4,
+        "returned": 0,
+        "distinct_domains": 0,
+        "cache_hits": 0,
+        "duration_ms": 3826,
+        "notes": [
+          "failed sources: wikipedia"
+        ]
+      },
+      "wall_ms": 3826
+    }
+  ],
+  "latency_ms": {
+    "median": 3160,
+    "max": 3826
+  }
+}
