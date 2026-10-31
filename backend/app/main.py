@@ -1,4 +1,11 @@
+import json
+import os
+from pathlib import Path
+from typing import Any
+
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.models import (
     ClaimExtractionRequest,
@@ -22,14 +29,24 @@ from app.pipeline.orchestrator import (
     build_retrieval_preview,
 )
 from app.pipeline.s5_report import build_report
+from app.pipeline.verify import (
+    ExtractionFailure,
+    VerifyInputError,
+    VerifyRequest,
+    VerifyResponse,
+    run_verify,
+)
 from s2_service import aretrieve_for_claims
+
+FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
 
 app = FastAPI(
     title="Factora VerifyAI API",
-    version="0.3.0",
+    version="0.4.0",
     description=(
-        "Transparent claim verification backend. S1 claim extraction and S2 retrieval "
-        "are available as separate stages; a full `/api/verify` verdict still requires S3 analysis."
+        "Transparent claim verification. S1 extracts checkable claims, S2 retrieves and "
+        "ranks evidence, S3 assigns a stance and verifies every quote against the "
+        "retrieved text, S4/S5 score it. Evidence strength is not a probability of truth."
     ),
 )
 
@@ -81,3 +98,55 @@ async def retrieve_claims(request: RetrievalPreviewRequest) -> RetrievalPreviewR
 def score_report(request: ScoreRequest) -> VerificationReport:
     """Score already-extracted claims and analyzed, quote-verified evidence."""
     return build_report(request)
+
+
+@app.post("/api/verify", response_model=VerifyResponse, tags=["pipeline"])
+async def verify_article(request: VerifyRequest) -> VerifyResponse:
+    """Run the whole pipeline on one article: S1 → S2 → S3 → S4/S5.
+
+    Every stage fails soft and is named in ``warnings``, so a report says what it
+    could not do instead of hiding it. ``mode`` selects the evidence path: ``live``,
+    ``offline`` (local corpus) or ``snapshot`` (the captured demo backup).
+    """
+    try:
+        return await run_verify(request)
+    except VerifyInputError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except ExtractionFailure as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
+
+@app.get("/api/samples", tags=["demo"])
+def sample_articles() -> dict[str, Any]:
+    """Prepared demo inputs, each written to exercise one outcome of the pipeline."""
+    path = FRONTEND_DIR.parent / "data" / "samples.json"
+    if not path.exists():
+        return {"samples": [], "note": "data/samples.json is not present in this checkout."}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+@app.get("/api/config", tags=["system"])
+def pipeline_config() -> dict[str, Any]:
+    """What this running process will actually do — the first thing to check when a
+    demo behaves differently from the README."""
+    from backend.config import get_settings
+
+    settings = get_settings()
+    snapshot = os.getenv("VERIFY_SNAPSHOT_PATH", "data/demo_snapshot.json")
+    return {
+        "s1_provider": settings.llm_provider,
+        "s1_fallback_enabled": settings.llm_fallback_to_heuristics,
+        "s3_mode": os.getenv("S3_MODE", "auto (lexical fallback)"),
+        "verify_mode": os.getenv("VERIFY_MODE", "auto"),
+        "snapshot_available": Path(snapshot).exists(),
+        "fact_check_key_configured": bool(os.getenv("GOOGLE_FACTCHECK_API_KEY")),
+        "tavily_key_configured": bool(os.getenv("TAVILY_API_KEY")),
+        "disclaimer": (
+            "Evidence strength is a measure of the evidence available, not a "
+            "probability that a claim is true."
+        ),
+    }
+
+
+if FRONTEND_DIR.exists():
+    app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="ui")

@@ -1,0 +1,788 @@
+{
+ "report": {
+  "input": {
+   "url": null,
+   "title": null,
+   "author": null,
+   "published": null
+  },
+  "claims": [
+   {
+    "claim": {
+     "id": "claim_001",
+     "text": "Vitamin C supplements prevent the common cold in most adults.",
+     "type": "factual",
+     "article_quote": "Vitamin C supplements prevent the common cold in most adults.",
+     "time_sensitive": true
+    },
+    "verdict": "CONFLICTING EVIDENCE",
+    "stance_score": -0.1325,
+    "evidence_strength": 0.3824,
+    "score_raw": 0.3824,
+    "shrinkage_factor": 1.0,
+    "scores": {
+     "C": 0.1,
+     "R": 0.7685,
+     "A": 0.1029,
+     "T": 0.2751,
+     "K": 0.7375
+    },
+    "contributions": {
+     "C": 0.03,
+     "R": 0.2305,
+     "A": 0.0206,
+     "T": 0.0275,
+     "K": 0.0738
+    },
+    "evidence": [
+     {
+      "id": "ev_b21071f892",
+      "claim_id": "claim_001",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminC-HealthProfessional/",
+      "domain": "ods.od.nih.gov",
+      "title": "Vitamin C \u2014 Fact Sheet for Health Professionals",
+      "snippet": "Vitamin C (ascorbic acid) is a water-soluble vitamin. Many people take vitamin C supplements to prevent or treat the common cold. Overall, the evidence to date suggests that routine supplementation with vitamin C does not reduce the incidence of the common cold in the general population, although it may shorten duration slightly in some groups. Most trials found no meaningful reduction in cold incidence among adults in the community.",
+      "full_text": "",
+      "published_at": "2024-01-15",
+      "source_kind": "mock",
+      "relevance": 1.0,
+      "credibility": 0.1,
+      "stance": "SUPPORTS",
+      "quote": "Many people take vitamin C supplements to prevent or treat the common cold.",
+      "quote_verified": true,
+      "quote_scope": "snippet",
+      "rationale": "The passage in the retrieved snippet agrees with the claim on 83% of its key terms. Scope note: the claim asserts \u201cmost\u201d, which this passage does not state.",
+      "context_score": 0.775,
+      "context_gap": false
+     },
+     {
+      "id": "ev_d2ea075ca8",
+      "claim_id": "claim_001",
+      "url": "https://www.snopes.com/fact-check/vitamin-c-common-cold/",
+      "domain": "snopes.com",
+      "title": "FACT CHECK: Does vitamin C prevent the common cold?",
+      "snippet": "Rating: Mixed. Claims that vitamin C reliably prevents the common cold in most adults are not supported by the body of randomized trials. Some studies in marathon runners and soldiers show a reduced incidence, but community trials in adults show no significant prevention effect.",
+      "full_text": "",
+      "published_at": "2023-11-02",
+      "source_kind": "mock",
+      "relevance": 0.7901,
+      "credibility": 0.1,
+      "stance": "REFUTES",
+      "quote": "Claims that vitamin C reliably prevents the common cold in most adults are not supported by the body of randomized trials.",
+      "quote_verified": true,
+      "quote_scope": "snippet",
+      "rationale": "The passage in the retrieved snippet contradicts the claim on 83% of its key terms. It also carries an explicit negation/correction cue (\u201care not\u201d, \u201cnot supported\u201d).",
+      "context_score": 0.775,
+      "context_gap": false
+     },
+     {
+      "id": "ev_c12b25d4b7",
+      "claim_id": "claim_001",
+      "url": "https://en.wikipedia.org/wiki/Common_cold",
+      "domain": "en.wikipedia.org",
+      "title": "Common cold \u2014 Overview",
+      "snippet": "The common cold is a viral infection of the upper respiratory tract. Over 200 virus strains are implicated. No vaccine exists. Prevention is mainly hand washing and avoiding close contact with infected people. Vitamin C supplementation has not been shown to prevent colds in the general population; zinc may shorten duration in some trials.",
+      "full_text": "",
+      "published_at": "2024-06-01",
+      "source_kind": "mock",
+      "relevance": 0.5153,
+      "credibility": 0.1,
+      "stance": "REFUTES",
+      "quote": "Vitamin C supplementation has not been shown to prevent colds in the general population; zinc may shorten duration in some trials.",
+      "quote_verified": true,
+      "quote_scope": "snippet",
+      "rationale": "The passage in the retrieved snippet contradicts the claim on 50% of its key terms. It also carries an explicit negation/correction cue (\u201chas not\u201d, \u201cnot been shown\u201d). Scope note: the claim asserts \u201cmost\u201d, which this passage does not state.",
+      "context_score": 0.325,
+      "context_gap": false
+     }
+    ],
+    "conflicts": [
+     "Vitamin C \u2014 Fact Sheet for Health Professionals",
+     "FACT CHECK: Does vitamin C prevent the common cold?",
+     "Common cold \u2014 Overview"
+    ],
+    "audit": {
+     "n_retrieved": 3,
+     "n_used": 3,
+     "n_independent": 3,
+     "hallucinated_quotes_dropped": 0,
+     "unknown_freshness": false,
+     "sources_failed": []
+    }
+   },
+   {
+    "claim": {
+     "id": "claim_002",
+     "text": "The campaign ran for six weeks on social channels.",
+     "type": "factual",
+     "article_quote": "The campaign ran for six weeks on social channels.",
+     "time_sensitive": false
+    },
+    "verdict": "INSUFFICIENT EVIDENCE",
+    "stance_score": 0.0,
+    "evidence_strength": 0.5,
+    "score_raw": 0.205,
+    "shrinkage_factor": 0.0,
+    "scores": {
+     "C": 0.35,
+     "R": 0.0,
+     "A": 0.0,
+     "T": 0.5,
+     "K": 0.5
+    },
+    "contributions": {
+     "C": 0.105,
+     "R": 0.0,
+     "A": 0.0,
+     "T": 0.05,
+     "K": 0.05
+    },
+    "evidence": [],
+    "conflicts": [],
+    "audit": {
+     "n_retrieved": 0,
+     "n_used": 0,
+     "n_independent": 0,
+     "hallucinated_quotes_dropped": 0,
+     "unknown_freshness": true,
+     "sources_failed": []
+    }
+   },
+   {
+    "claim": {
+     "id": "claim_003",
+     "text": "The company's landing page cited decades of research.",
+     "type": "factual",
+     "article_quote": "The company's landing page cited decades of research.",
+     "time_sensitive": false
+    },
+    "verdict": "INSUFFICIENT EVIDENCE",
+    "stance_score": 0.0,
+    "evidence_strength": 0.5,
+    "score_raw": 0.205,
+    "shrinkage_factor": 0.0,
+    "scores": {
+     "C": 0.35,
+     "R": 0.0,
+     "A": 0.0,
+     "T": 0.5,
+     "K": 0.5
+    },
+    "contributions": {
+     "C": 0.105,
+     "R": 0.0,
+     "A": 0.0,
+     "T": 0.05,
+     "K": 0.05
+    },
+    "evidence": [],
+    "conflicts": [],
+    "audit": {
+     "n_retrieved": 0,
+     "n_used": 0,
+     "n_independent": 0,
+     "hallucinated_quotes_dropped": 0,
+     "unknown_freshness": true,
+     "sources_failed": []
+    }
+   },
+   {
+    "claim": {
+     "id": "claim_004",
+     "text": "No specific study was linked from the page.",
+     "type": "factual",
+     "article_quote": "No specific study was linked from the page.",
+     "time_sensitive": false
+    },
+    "verdict": "INSUFFICIENT EVIDENCE",
+    "stance_score": 0.0,
+    "evidence_strength": 0.5,
+    "score_raw": 0.205,
+    "shrinkage_factor": 0.0,
+    "scores": {
+     "C": 0.35,
+     "R": 0.0,
+     "A": 0.0,
+     "T": 0.5,
+     "K": 0.5
+    },
+    "contributions": {
+     "C": 0.105,
+     "R": 0.0,
+     "A": 0.0,
+     "T": 0.05,
+     "K": 0.05
+    },
+    "evidence": [],
+    "conflicts": [],
+    "audit": {
+     "n_retrieved": 0,
+     "n_used": 0,
+     "n_independent": 0,
+     "hallucinated_quotes_dropped": 0,
+     "unknown_freshness": true,
+     "sources_failed": []
+    }
+   },
+   {
+    "claim": {
+     "id": "claim_005",
+     "text": "The claim was repeated in the company's email newsletter.",
+     "type": "factual",
+     "article_quote": "The claim was repeated in the company's email newsletter.",
+     "time_sensitive": false
+    },
+    "verdict": "INSUFFICIENT EVIDENCE",
+    "stance_score": 0.0,
+    "evidence_strength": 0.5,
+    "score_raw": 0.205,
+    "shrinkage_factor": 0.0,
+    "scores": {
+     "C": 0.35,
+     "R": 0.0,
+     "A": 0.0,
+     "T": 0.5,
+     "K": 0.5
+    },
+    "contributions": {
+     "C": 0.105,
+     "R": 0.0,
+     "A": 0.0,
+     "T": 0.05,
+     "K": 0.05
+    },
+    "evidence": [],
+    "conflicts": [],
+    "audit": {
+     "n_retrieved": 0,
+     "n_used": 0,
+     "n_independent": 0,
+     "hallucinated_quotes_dropped": 0,
+     "unknown_freshness": true,
+     "sources_failed": []
+    }
+   },
+   {
+    "claim": {
+     "id": "claim_006",
+     "text": "Health communicators asked whether the wording was supported.",
+     "type": "factual",
+     "article_quote": "Health communicators asked whether the wording was supported.",
+     "time_sensitive": false
+    },
+    "verdict": "INSUFFICIENT EVIDENCE",
+    "stance_score": 0.0,
+    "evidence_strength": 0.5,
+    "score_raw": 0.205,
+    "shrinkage_factor": 0.0,
+    "scores": {
+     "C": 0.35,
+     "R": 0.0,
+     "A": 0.0,
+     "T": 0.5,
+     "K": 0.5
+    },
+    "contributions": {
+     "C": 0.105,
+     "R": 0.0,
+     "A": 0.0,
+     "T": 0.05,
+     "K": 0.05
+    },
+    "evidence": [],
+    "conflicts": [],
+    "audit": {
+     "n_retrieved": 0,
+     "n_used": 0,
+     "n_independent": 0,
+     "hallucinated_quotes_dropped": 0,
+     "unknown_freshness": true,
+     "sources_failed": []
+    }
+   }
+  ],
+  "disclaimer": "Evidence-weighted assessment, not a guaranteed truth verdict. Review the cited sources and context."
+ },
+ "mode": "offline",
+ "source_type": "article_text",
+ "stages": [
+  {
+   "name": "S1 claim extraction",
+   "status": "ok",
+   "ms": 178,
+   "detail": "6 checkable claims"
+  },
+  {
+   "name": "S1 article-quote guard",
+   "status": "ok",
+   "ms": 8,
+   "detail": "6 of 6 claims carry a verified quote"
+  },
+  {
+   "name": "S2 retrieval (offline)",
+   "status": "ok",
+   "ms": 17,
+   "detail": "3 evidence items across 3 domains"
+  },
+  {
+   "name": "S3 stance + quote guard",
+   "status": "ok",
+   "ms": 4,
+   "detail": "3/3 items given a stance; 0 quote(s) dropped"
+  },
+  {
+   "name": "S4/S5 score + report",
+   "status": "ok",
+   "ms": 0,
+   "detail": "6 claim report(s) from 3 verified quotes"
+  }
+ ],
+ "s1": {
+  "provider": "mock",
+  "configured_provider": "mock",
+  "used_fallback": false,
+  "claims_returned": 6,
+  "claims_from_provider": 7,
+  "rejected": 0,
+  "deduplicated": 0,
+  "article_sentences": 7,
+  "notes": []
+ },
+ "grounding": {
+  "stage": "S1_GROUNDING",
+  "claims_in": 6,
+  "claims_kept": 6,
+  "claims_dropped_ungrounded": 0,
+  "quotes_exact": 6,
+  "quotes_relocated_in_article": 0,
+  "quotes_unmatched": 0,
+  "time_sensitive_claims": 1,
+  "reporting_frames_stripped": 0,
+  "stripped": [],
+  "article_sentences": 7,
+  "min_align": 0.5,
+  "dropped": [],
+  "notes": [],
+  "claims": [
+   {
+    "id": "claim_001",
+    "original_text": "Vitamin C supplements prevent the common cold in most adults.",
+    "assertion": "Vitamin C supplements prevent the common cold in most adults.",
+    "reporting_frame_removed": null,
+    "article_quote": "Vitamin C supplements prevent the common cold in most adults.",
+    "quote_source": "exact",
+    "align": 1.0,
+    "type": "factual",
+    "entities": [
+     "Vitamin"
+    ],
+    "time_sensitive": true,
+    "time_sensitive_reason": "superlative or record claim"
+   },
+   {
+    "id": "claim_002",
+    "original_text": "The campaign ran for six weeks on social channels.",
+    "assertion": "The campaign ran for six weeks on social channels.",
+    "reporting_frame_removed": null,
+    "article_quote": "The campaign ran for six weeks on social channels.",
+    "quote_source": "exact",
+    "align": 1.0,
+    "type": "factual",
+    "entities": [
+     "Vitamin"
+    ],
+    "time_sensitive": false,
+    "time_sensitive_reason": null
+   },
+   {
+    "id": "claim_003",
+    "original_text": "The company's landing page cited decades of research.",
+    "assertion": "The company's landing page cited decades of research.",
+    "reporting_frame_removed": null,
+    "article_quote": "The company's landing page cited decades of research.",
+    "quote_source": "exact",
+    "align": 1.0,
+    "type": "factual",
+    "entities": [
+     "Vitamin"
+    ],
+    "time_sensitive": false,
+    "time_sensitive_reason": null
+   },
+   {
+    "id": "claim_004",
+    "original_text": "No specific study was linked from the page.",
+    "assertion": "No specific study was linked from the page.",
+    "reporting_frame_removed": null,
+    "article_quote": "No specific study was linked from the page.",
+    "quote_source": "exact",
+    "align": 1.0,
+    "type": "factual",
+    "entities": [
+     "Vitamin"
+    ],
+    "time_sensitive": false,
+    "time_sensitive_reason": null
+   },
+   {
+    "id": "claim_005",
+    "original_text": "The claim was repeated in the company's email newsletter.",
+    "assertion": "The claim was repeated in the company's email newsletter.",
+    "reporting_frame_removed": null,
+    "article_quote": "The claim was repeated in the company's email newsletter.",
+    "quote_source": "exact",
+    "align": 1.0,
+    "type": "factual",
+    "entities": [
+     "Vitamin"
+    ],
+    "time_sensitive": false,
+    "time_sensitive_reason": null
+   },
+   {
+    "id": "claim_006",
+    "original_text": "Health communicators asked whether the wording was supported.",
+    "assertion": "Health communicators asked whether the wording was supported.",
+    "reporting_frame_removed": null,
+    "article_quote": "Health communicators asked whether the wording was supported.",
+    "quote_source": "exact",
+    "align": 1.0,
+    "type": "factual",
+    "entities": [
+     "Health"
+    ],
+    "time_sensitive": false,
+    "time_sensitive_reason": null
+   }
+  ]
+ },
+ "s3_audit": {
+  "stage": "S3_ANALYSIS",
+  "analyzer": "lexical",
+  "evidence_analyzed": 3,
+  "decisive": 3,
+  "neutral": 0,
+  "llm_analyzed": 0,
+  "lexical_analyzed": 3,
+  "quote_dropped_count": 0,
+  "provider_note": "mode=lexicon",
+  "notes": [
+   "mode=lexicon"
+  ],
+  "min_confidence": 0.45,
+  "mode": "lexicon"
+ },
+ "retrieval_summary": {
+  "claims": 6,
+  "evidence_items": 3,
+  "distinct_domains": 3,
+  "quote_verified_items": 3,
+  "claims_without_evidence": 5,
+  "full_text_items": 0,
+  "snippet_only_items": 3
+ },
+ "per_claim_retrieval": [
+  {
+   "claim_id": "claim_001",
+   "claim_text": "Vitamin C supplements prevent the common cold in most adults.",
+   "evidence_count": 3,
+   "domains": [
+    "en.wikipedia.org",
+    "ods.od.nih.gov",
+    "snopes.com"
+   ],
+   "sources": [
+    {
+     "id": "ev_b21071f892",
+     "url": "https://ods.od.nih.gov/factsheets/VitaminC-HealthProfessional/",
+     "domain": "ods.od.nih.gov",
+     "title": "Vitamin C \u2014 Fact Sheet for Health Professionals",
+     "source_kind": "mock",
+     "published_at": "2024-01-15",
+     "relevance": 1.0,
+     "credibility": 0.1,
+     "stance": "SUPPORTS",
+     "quote": "Many people take vitamin C supplements to prevent or treat the common cold.",
+     "quote_verified": true,
+     "rationale": "The passage in the retrieved snippet agrees with the claim on 83% of its key terms. Scope note: the claim asserts \u201cmost\u201d, which this passage does not state.",
+     "text_available": false,
+     "snippet": "Vitamin C (ascorbic acid) is a water-soluble vitamin. Many people take vitamin C supplements to prevent or treat the common cold. Overall, the evidence to date suggests that routine supplementation with vitamin C does not reduce the incidence of the common cold in the general population, although it may shorten duration slightly in some groups. Most trials found no meaningful reduction in cold incidence among adults in the community."
+    },
+    {
+     "id": "ev_d2ea075ca8",
+     "url": "https://www.snopes.com/fact-check/vitamin-c-common-cold/",
+     "domain": "snopes.com",
+     "title": "FACT CHECK: Does vitamin C prevent the common cold?",
+     "source_kind": "mock",
+     "published_at": "2023-11-02",
+     "relevance": 0.7901,
+     "credibility": 0.1,
+     "stance": "REFUTES",
+     "quote": "Claims that vitamin C reliably prevents the common cold in most adults are not supported by the body of randomized trials.",
+     "quote_verified": true,
+     "rationale": "The passage in the retrieved snippet contradicts the claim on 83% of its key terms. It also carries an explicit negation/correction cue (\u201care not\u201d, \u201cnot supported\u201d).",
+     "text_available": false,
+     "snippet": "Rating: Mixed. Claims that vitamin C reliably prevents the common cold in most adults are not supported by the body of randomized trials. Some studies in marathon runners and soldiers show a reduced incidence, but community trials in adults show no significant prevention effect."
+    },
+    {
+     "id": "ev_c12b25d4b7",
+     "url": "https://en.wikipedia.org/wiki/Common_cold",
+     "domain": "en.wikipedia.org",
+     "title": "Common cold \u2014 Overview",
+     "source_kind": "mock",
+     "published_at": "2024-06-01",
+     "relevance": 0.5153,
+     "credibility": 0.1,
+     "stance": "REFUTES",
+     "quote": "Vitamin C supplementation has not been shown to prevent colds in the general population; zinc may shorten duration in some trials.",
+     "quote_verified": true,
+     "rationale": "The passage in the retrieved snippet contradicts the claim on 50% of its key terms. It also carries an explicit negation/correction cue (\u201chas not\u201d, \u201cnot been shown\u201d). Scope note: the claim asserts \u201cmost\u201d, which this passage does not state.",
+     "text_available": false,
+     "snippet": "The common cold is a viral infection of the upper respiratory tract. Over 200 virus strains are implicated. No vaccine exists. Prevention is mainly hand washing and avoiding close contact with infected people. Vitamin C supplementation has not been shown to prevent colds in the general population; zinc may shorten duration in some trials."
+    }
+   ],
+   "retrieval": {
+    "sources_queried": 1,
+    "sources_ok": 1,
+    "sources_failed": 0,
+    "candidates_total": 6,
+    "dropped_low_coverage": 0,
+    "dropped_duplicates": 3,
+    "dropped_over_domain_cap": 0,
+    "returned": 3,
+    "distinct_domains": 3,
+    "cache_hits": 0,
+    "duration_ms": 5,
+    "full_text_requested": 0,
+    "full_text_fetched": 0,
+    "full_text_failed": 0,
+    "mean_coverage": 0.8,
+    "failed_source_names": [],
+    "sources": [
+     {
+      "name": "local_corpus",
+      "status": "ok",
+      "results": 6,
+      "cached": false,
+      "latency_ms": 1,
+      "error": null
+     }
+    ],
+    "notes": [],
+    "queries": [
+     "Vitamin C supplements prevent common cold adults.",
+     "Vitamin C"
+    ]
+   }
+  },
+  {
+   "claim_id": "claim_002",
+   "claim_text": "The campaign ran for six weeks on social channels.",
+   "evidence_count": 0,
+   "domains": [],
+   "sources": [],
+   "retrieval": {
+    "sources_queried": 1,
+    "sources_ok": 0,
+    "sources_failed": 0,
+    "candidates_total": 3,
+    "dropped_low_coverage": 3,
+    "dropped_duplicates": 0,
+    "dropped_over_domain_cap": 0,
+    "returned": 0,
+    "distinct_domains": 0,
+    "cache_hits": 0,
+    "duration_ms": 14,
+    "full_text_requested": 0,
+    "full_text_fetched": 0,
+    "full_text_failed": 0,
+    "mean_coverage": 0.0,
+    "failed_source_names": [],
+    "sources": [
+     {
+      "name": "local_corpus",
+      "status": "empty",
+      "results": 3,
+      "cached": false,
+      "latency_ms": 0,
+      "error": null
+     }
+    ],
+    "notes": [],
+    "queries": [
+     "campaign ran six weeks social channels.",
+     "Vitamin campaign ran six weeks social channels."
+    ]
+   }
+  },
+  {
+   "claim_id": "claim_003",
+   "claim_text": "The company's landing page cited decades of research.",
+   "evidence_count": 0,
+   "domains": [],
+   "sources": [],
+   "retrieval": {
+    "sources_queried": 1,
+    "sources_ok": 0,
+    "sources_failed": 0,
+    "candidates_total": 3,
+    "dropped_low_coverage": 3,
+    "dropped_duplicates": 0,
+    "dropped_over_domain_cap": 0,
+    "returned": 0,
+    "distinct_domains": 0,
+    "cache_hits": 0,
+    "duration_ms": 7,
+    "full_text_requested": 0,
+    "full_text_fetched": 0,
+    "full_text_failed": 0,
+    "mean_coverage": 0.0,
+    "failed_source_names": [],
+    "sources": [
+     {
+      "name": "local_corpus",
+      "status": "empty",
+      "results": 3,
+      "cached": false,
+      "latency_ms": 3,
+      "error": null
+     }
+    ],
+    "notes": [],
+    "queries": [
+     "company's landing page cited decades research.",
+     "Vitamin company's landing page cited decades research."
+    ]
+   }
+  },
+  {
+   "claim_id": "claim_004",
+   "claim_text": "No specific study was linked from the page.",
+   "evidence_count": 0,
+   "domains": [],
+   "sources": [],
+   "retrieval": {
+    "sources_queried": 1,
+    "sources_ok": 0,
+    "sources_failed": 0,
+    "candidates_total": 3,
+    "dropped_low_coverage": 3,
+    "dropped_duplicates": 0,
+    "dropped_over_domain_cap": 0,
+    "returned": 0,
+    "distinct_domains": 0,
+    "cache_hits": 0,
+    "duration_ms": 12,
+    "full_text_requested": 0,
+    "full_text_fetched": 0,
+    "full_text_failed": 0,
+    "mean_coverage": 0.0,
+    "failed_source_names": [],
+    "sources": [
+     {
+      "name": "local_corpus",
+      "status": "empty",
+      "results": 3,
+      "cached": false,
+      "latency_ms": 0,
+      "error": null
+     }
+    ],
+    "notes": [],
+    "queries": [
+     "specific linked page.",
+     "Vitamin specific linked page."
+    ]
+   }
+  },
+  {
+   "claim_id": "claim_005",
+   "claim_text": "The claim was repeated in the company's email newsletter.",
+   "evidence_count": 0,
+   "domains": [],
+   "sources": [],
+   "retrieval": {
+    "sources_queried": 1,
+    "sources_ok": 1,
+    "sources_failed": 0,
+    "candidates_total": 5,
+    "dropped_low_coverage": 4,
+    "dropped_duplicates": 1,
+    "dropped_over_domain_cap": 0,
+    "returned": 0,
+    "distinct_domains": 0,
+    "cache_hits": 0,
+    "duration_ms": 5,
+    "full_text_requested": 0,
+    "full_text_fetched": 0,
+    "full_text_failed": 0,
+    "mean_coverage": 0.0,
+    "failed_source_names": [],
+    "sources": [
+     {
+      "name": "local_corpus",
+      "status": "ok",
+      "results": 5,
+      "cached": false,
+      "latency_ms": 1,
+      "error": null
+     }
+    ],
+    "notes": [],
+    "queries": [
+     "claim repeated company's email newsletter.",
+     "Vitamin claim repeated company's email newsletter."
+    ]
+   }
+  },
+  {
+   "claim_id": "claim_006",
+   "claim_text": "Health communicators asked whether the wording was supported.",
+   "evidence_count": 0,
+   "domains": [],
+   "sources": [],
+   "retrieval": {
+    "sources_queried": 1,
+    "sources_ok": 0,
+    "sources_failed": 0,
+    "candidates_total": 0,
+    "dropped_low_coverage": 0,
+    "dropped_duplicates": 0,
+    "dropped_over_domain_cap": 0,
+    "returned": 0,
+    "distinct_domains": 0,
+    "cache_hits": 0,
+    "duration_ms": 7,
+    "full_text_requested": 0,
+    "full_text_fetched": 0,
+    "full_text_failed": 0,
+    "mean_coverage": 0.0,
+    "failed_source_names": [],
+    "sources": [
+     {
+      "name": "local_corpus",
+      "status": "empty",
+      "results": 0,
+      "cached": false,
+      "latency_ms": 1,
+      "error": null
+     }
+    ],
+    "notes": [
+     "no source returned usable results"
+    ],
+    "queries": [
+     "Health communicators asked whether wording supported.",
+     "Health"
+    ]
+   }
+  }
+ ],
+ "warnings": [
+  "S2: every source in this run came from the local demo corpus. Those entries are tagged source_kind=mock and score 0.10 credibility by design, so this run shows how the mechanism works, not what real evidence does.",
+  "S3: stances came from the deterministic lexical analyser, not a trained NLI model (mode=lexicon).",
+  "S2/S3: 3 item(s) had no page text, so their quotes are verified against the search snippet only \u2014 not against the source."
+ ],
+ "demo_backup": false,
+ "note": "Evidence-weighted assessment. Every displayed quote was verified against retrieved text; verdicts are computed only from verified quotes."
+}

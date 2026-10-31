@@ -83,6 +83,10 @@ class EvidenceItem(BaseModel):
     stance: Stance = Stance.NEUTRAL
     quote: str = ""
     quote_verified: bool = False
+    # What the verified quote was matched against: "full_text" (fetched page text,
+    # i.e. genuinely in the source) or "snippet" (present in the search snippet only).
+    # Kept explicit because the two do not mean the same thing to a reader.
+    quote_scope: Literal["full_text", "snippet", ""] = ""
     rationale: str = ""
     context_score: float = Field(default=0.7, ge=0.0, le=1.0)
     context_gap: bool = False

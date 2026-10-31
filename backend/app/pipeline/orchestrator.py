@@ -1,8 +1,17 @@
 """Orchestration helpers that join S2 retrieval, S3 analysis, and S4/S5 reporting.
 
-S3 is supplied as a callback so this module can be merged before Ikjot's final
-provider/function signature is ready. The `/api/retrieve` preview deliberately
-returns retrieval-only evidence and does not pretend it has verified a claim.
+Two entry points live here:
+
+* ``build_retrieval_preview`` backs ``POST /api/retrieve`` and deliberately returns
+  retrieval-only evidence, with no stance and no verdict, so the team can inspect what
+  S2 found before anything judges it.
+* ``run_verified_claim_pipeline`` is the seam for programmatic callers. S3 stays an
+  injected ``analyze_fn`` — production passes ``s3_analysis.analyze``, tests pass a stub
+  — which is what keeps the quote guard testable without a model.
+
+``POST /api/verify`` (in ``app.pipeline.verify``) runs the same join with S1 in front
+of it and per-stage audit around it; both end in ``merge_and_score``, so there is one
+definition of what reaches a score.
 """
 from __future__ import annotations
 
@@ -17,11 +26,9 @@ from app.models import (
     ClaimEvidenceBundle,
     ClaimInput,
     InputMetadata,
-    ScoreRequest,
     VerificationReport,
 )
-from app.pipeline.s5_report import build_report
-from contract_adapter import to_score_request
+from app.pipeline.verify import merge_and_score
 from s2_service import apply_analysis, retrieval_summary
 
 
@@ -90,11 +97,17 @@ async def run_verified_claim_pipeline(
 ) -> VerificationReport:
     """Run S2 -> S3 quote/stance merge -> S4/S5 report.
 
-    ``analyze_fn`` is Ikjot's S3 entry point. It must return analyses keyed by
-    ``evidence_id`` or ``url`` with fields such as ``stance``, ``quote``,
-    ``quote_verified``, ``rationale``, ``context_score`` and ``context_gap``.
-    `apply_analysis` independently re-checks quotes against the retrieved text
-    before any evidence reaches scoring.
+    ``analyze_fn`` is Ikjot's S3 entry point — in production ``s3_analysis.analyze``,
+    which the pipeline calls as ``analyze_fn(claims, bundles)`` and which may be sync
+    or async. It must return analyses keyed by ``evidence_id`` or ``url`` with fields
+    such as ``stance``, ``quote``, ``quote_verified``, ``rationale``, ``context_score``
+    and ``context_gap``. `apply_analysis` independently re-checks quotes against the
+    retrieved text before any evidence reaches scoring, so this seam does not depend on
+    the analyzer policing itself.
+
+    The final join goes through :func:`app.pipeline.verify.merge_and_score`, the same
+    function ``POST /api/verify`` uses, so the two paths cannot disagree about what a
+    score is computed from.
     """
     if not claims:
         raise ValueError("at least one claim is required")
@@ -105,10 +118,8 @@ async def run_verified_claim_pipeline(
         analysis_result = await analysis_result
 
     analyzed_bundles = apply_analysis(bundles, analysis_result)
-    payload = to_score_request(
+    return merge_and_score(
         analyzed_bundles,
         input_meta=dict(input_meta or {}),
         as_of=as_of,
     )
-    request = ScoreRequest.model_validate(payload)
-    return build_report(request)

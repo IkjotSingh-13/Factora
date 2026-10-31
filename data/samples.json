@@ -1,0 +1,40 @@
+{
+  "note": "Prepared demo inputs. Each one is written so the pipeline lands on a specific, honest outcome, and `expect` describes that outcome in words the demo can repeat. These are demo aids, not a scored test set: see data/test_set.json and data/test_set_results.json for measured results.",
+  "samples": [
+    {
+      "id": "supported",
+      "label": "Figure the sources confirm",
+      "expect": "The article's number matches the sources, so the claim should read SUPPORTED with independently quote-verified sources.",
+      "title": "Travel brief repeats the tower's official height",
+      "article": "The Eiffel Tower is 330 metres tall. That figure includes the broadcasting antenna added to the tower. A widely shared travel brief states that the Eiffel Tower is 330 metres tall. The brief repeats the number in its summary of Paris landmarks. The tower was completed for the 1889 World's Fair. It remains the tallest structure in Paris. Tourism officials published the height figure again this month."
+    },
+    {
+      "id": "refuted",
+      "label": "Health claim the evidence contradicts",
+      "expect": "The sources say the opposite of the claim. This is the case the design is careful about: strong evidence pointing against a claim, reported as REFUTED rather than as a merely low score.",
+      "title": "Supplement campaign's seasonal claim",
+      "article": "Vitamin C supplements prevent the common cold in most adults. A supplement retailer made that claim in a seasonal advertising campaign. The campaign ran for six weeks on social channels. The company's landing page cited decades of research. No specific study was linked from the page. The claim was repeated in the company's email newsletter. Health communicators asked whether the wording was supported."
+    },
+    {
+      "id": "context",
+      "label": "Nearly right, wrong scope",
+      "expect": "The claim is close to what the sources say but asserts a scope they do not support, so the report should flag the context gap and refuse a clean verdict.",
+      "title": "Viral post about what astronauts can see",
+      "article": "The Great Wall of China is visible from space with the naked eye. An image-post repeats that statement as though it were an established fact. The post has been shared hundreds of thousands of times. Several commenters disputed the caption. One commenter linked to an astronaut's account of the wall. The post's author said the photograph was taken from a commercial flight. The caption did not mention the flight."
+    },
+    {
+      "id": "thin",
+      "label": "Too thin to judge",
+      "expect": "Nothing retrieved is both on-topic and quote-verifiable, so the honest output is INSUFFICIENT EVIDENCE. This is the state the design protects: no verdict is forced when the evidence is not there.",
+      "title": "Announcement from an unverified account",
+      "article": "A newly formed consortium has finalised a partnership with the national space agency. The consortium will build a hydrogen-powered aircraft by next spring. The announcement was made by an account with eleven followers. No names were given in the announcement. No dates were given in the announcement. No filing was linked from the announcement. Three other posts copied the announcement verbatim."
+    },
+    {
+      "id": "conflicting",
+      "label": "Sources that disagree",
+      "expect": "One source backs the claim and another contradicts it, so the report should show CONFLICTING EVIDENCE with both sides cited, and should not average them into a single number.",
+      "title": "Two accounts of the same lightning strike",
+      "article": "Lightning never strikes the same place twice. A safety leaflet repeated that saying for a school fair. The Empire State Building is struck by lightning about eighty times each year. The leaflet's author defended the wording in an interview. The national weather service states that lightning can strike the same place many times. The leaflet was printed in 2009."
+    }
+  ]
+}

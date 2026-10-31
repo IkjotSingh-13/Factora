@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VerifyAI — evidence, not verdicts</title>
+<!--
+  Zero-build single-page UI (Taranpreet's stage). One file: no bundler, no CDN, no
+  framework, nothing to install. FastAPI serves it at "/" and the app calls the API on
+  the same origin with relative URLs, so it works from the proxy host and from disk.
+
+  Design rules taken from the plan, and the reason each one is here:
+    * no large TRUE/FALSE badge — the honest output is a stance *plus* a strength
+      computed from quote-verified evidence, which a green tick would flatten;
+    * strength and direction are shown as two separate numbers, never merged;
+    * every quote carries the text scope it was verified against;
+    * "insufficient evidence" is a first-class result, not an error state;
+    * the audit footer is always visible, because the audit trail is the product.
+-->
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel-2: #1c2128;
+    --line: #2a3138;
+    --ink: #e6edf3;
+    --muted: #8b98a5;
+    --dim: #6e7b8a;
+    --support: #3fb950;
+    --refute: #f85149;
+    --neutral: #8b98a5;
+    --conflict: #d29922;
+    --accent: #58a6ff;
+    --radius: 10px;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  header {
+    padding: 18px 24px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+    background: linear-gradient(180deg, #12181f, #0d1117);
+  }
+  header h1 { font-size: 17px; margin: 0; letter-spacing: .2px; }
+  header .tagline { color: var(--muted); font-size: 13px; }
+  header .spacer { flex: 1 1 auto; }
+  header .status { font: 12px/1 var(--mono); color: var(--dim); }
+  header .status.ok { color: var(--support); }
+  header .status.bad { color: var(--refute); }
+
+  main { display: grid; grid-template-columns: minmax(320px, 420px) minmax(0, 1fr); gap: 20px; padding: 20px 24px 40px; align-items: start; }
+  @media (max-width: 980px) { main { grid-template-columns: 1fr; } }
+
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+  .card + .card { margin-top: 16px; }
+  .card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin: 0; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .card .body { padding: 14px; }
+
+  textarea {
+    width: 100%; min-height: 210px; resize: vertical; background: var(--panel-2);
+    color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+    font: 13px/1.5 var(--mono);
+  }
+  textarea:focus, input:focus, select:focus { outline: 1px solid var(--accent); border-color: var(--accent); }
+  input[type=text], select {
+    width: 100%; background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 8px; padding: 9px 11px; font: 13px/1.4 var(--mono);
+  }
+  label.field { display: block; margin-top: 12px; }
+  label.field > span { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  button {
+    font: inherit; cursor: pointer; border-radius: 8px; padding: 9px 15px;
+    border: 1px solid var(--line); background: var(--panel-2); color: var(--ink);
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: #1f6feb; border-color: #1f6feb; color: #fff; font-weight: 600; }
+  button.primary:hover { background: #388bfd; }
+  button.primary:disabled { opacity: .55; cursor: progress; }
+  button.mini { padding: 5px 9px; font-size: 12px; }
+
+  .samples { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .samples button { font-size: 12px; padding: 5px 9px; color: var(--muted); }
+  .samples button:hover { color: var(--ink); }
+
+  .hint { color: var(--dim); font-size: 12px; margin-top: 10px; }
+
+  /* progress */
+  .progress { display: none; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
+  .progress.on { display: flex; }
+  .step { font: 11px/1 var(--mono); color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; }
+  .step.active { color: var(--accent); border-color: var(--accent); }
+  .step.done { color: var(--support); border-color: #1d4228; }
+  .spinner { width: 11px; height: 11px; border: 2px solid var(--accent); border-top-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; display: inline-block; vertical-align: -1px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty, .error { padding: 26px 20px; color: var(--muted); }
+  .error { color: #ff9d96; background: #2a1416; border: 1px solid #5c2b28; border-radius: var(--radius); margin-bottom: 16px; }
+  .error strong { color: #ff9d96; display: block; margin-bottom: 4px; }
+
+  /* claim cards */
+  .claim { padding: 0; overflow: hidden; }
+  .claim-head { padding: 14px 16px 12px; }
+  .claim-text { font-size: 15.5px; font-weight: 600; line-height: 1.45; }
+  .quote {
+    margin: 10px 0 0; padding: 9px 12px; border-left: 3px solid var(--line);
+    background: var(--panel-2); border-radius: 0 6px 6px 0; color: #c3ccd6; font-size: 13px;
+  }
+  .quote .label { display: block; font: 10px/1 var(--mono); text-transform: uppercase; letter-spacing: .7px; color: var(--dim); margin-bottom: 5px; }
+  .quote.missing { border-left-color: #6e4b12; color: var(--muted); font-style: italic; }
+
+  .meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 11px; }
+  .chip { font: 11px/1 var(--mono); padding: 5px 8px; border-radius: 6px; border: 1px solid var(--line); color: var(--muted); }
+  .chip.verdict { font-weight: 700; letter-spacing: .3px; }
+  .v-supported { color: var(--support); border-color: #1d4228; background: #10241a; }
+  .v-refuted { color: var(--refute); border-color: #58211f; background: #26100f; }
+  .v-conflicting { color: var(--conflict); border-color: #4d3a10; background: #211a09; }
+  .v-insufficient { color: var(--muted); border-color: var(--line); background: var(--panel-2); }
+  .v-mixed { color: #a5d6ff; border-color: #24405c; background: #0f1e2d; }
+  .chip.type { text-transform: capitalize; }
+
+  .scores { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 14px; padding: 12px 16px 16px; border-top: 1px solid var(--line); background: #12171d; }
+  .gauge { font-size: 12px; color: var(--muted); }
+  .gauge .num { font: 600 15px/1 var(--mono); color: var(--ink); }
+  .bar { height: 6px; border-radius: 999px; background: #232b34; overflow: hidden; margin-top: 7px; position: relative; }
+  .bar > i { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
+  .bar.split { display: flex; }
+  .bar.split > .neg { background: var(--refute); }
+  .bar.split > .pos { background: var(--support); }
+  .bar.split > .mid { background: #232b34; flex: 1 1 auto; }
+  .components { margin-top: 4px; }
+  .components table { border-collapse: collapse; width: 100%; font: 11.5px/1.5 var(--mono); }
+  .components th { text-align: left; color: var(--dim); font-weight: 400; padding: 2px 6px 2px 0; }
+  .components td { padding: 2px 6px 2px 0; color: var(--muted); }
+  .components td.k { color: var(--ink); }
+  .cbits { height: 4px; border-radius: 2px; background: #232b34; width: 100%; margin-top: 3px; }
+  .cbits > i { display: block; height: 100%; border-radius: 2px; }
+
+  /* evidence */
+  .evidence { padding: 4px 16px 16px; }
+  .evidence h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin: 14px 0 8px; font-weight: 600; }
+  .ev { border: 1px solid var(--line); border-radius: 8px; margin-bottom: 9px; background: var(--panel-2); }
+  .ev-top { display: flex; gap: 9px; align-items: center; padding: 9px 11px; flex-wrap: wrap; }
+  .stance { font: 11px/1 var(--mono); font-weight: 700; padding: 4px 7px; border-radius: 5px; letter-spacing: .4px; }
+  .s-SUPPORTS { color: var(--support); background: #10241a; border: 1px solid #1d4228; }
+  .s-REFUTES { color: var(--refute); background: #26100f; border: 1px solid #58211f; }
+  .s-NEUTRAL { color: var(--neutral); background: #1a2028; border: 1px solid var(--line); }
+  .src { font-size: 12.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .src .dom { color: var(--dim); font: 11px/1 var(--mono); }
+  .ev .quote { margin: 0 11px 9px; background: #12171d; }
+  .ev .rationale { padding: 0 11px 9px; color: var(--muted); font-size: 12.5px; }
+  .ev-foot { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 0 11px 10px; font: 11px/1 var(--mono); color: var(--dim); }
+  .scope { padding: 3px 6px; border-radius: 4px; border: 1px solid var(--line); }
+  .scope.full { color: var(--support); border-color: #1d4228; }
+  .scope.snip { color: var(--conflict); border-color: #4d3a10; }
+  .scope.none { color: var(--refute); border-color: #58211f; }
+
+  .insufficient-note { padding: 11px 16px 15px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); background: #12171d; }
+  .insufficient-note strong { color: #d8e0e8; }
+
+  /* audit */
+  .audit { font: 12px/1.6 var(--mono); color: var(--muted); }
+  .audit .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .audit .k { color: var(--dim); display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .6px; }
+  .audit .v { color: var(--ink); }
+  .stages { list-style: none; margin: 12px 0 0; padding: 0; }
+  .stages li { display: flex; gap: 10px; align-items: baseline; padding: 5px 0; border-top: 1px dashed #1e252c; }
+  .stages li:first-child { border-top: 0; }
+  .stages .name { flex: 1 1 auto; color: var(--ink); }
+  .stages .ms { color: var(--dim); }
+  .st-ok { color: var(--support); }
+  .st-degraded { color: var(--conflict); }
+  .st-failed, .st-skipped { color: var(--refute); }
+  .warn { background: #1d1608; border: 1px solid #4d3a10; color: #e3b341; padding: 9px 11px; border-radius: 7px; margin-top: 8px; font: 12.5px/1.5 var(--mono); }
+  .disclaimer { margin-top: 12px; color: var(--dim); font-size: 12px; font-style: italic; }
+  .banner { display: none; margin: 0 0 16px; padding: 10px 13px; border-radius: 8px; background: #0f1e2d; border: 1px solid #24405c; color: #a5d6ff; font-size: 13px; }
+  .banner.on { display: block; }
+  .banner.backup { background: #211a09; border-color: #4d3a10; color: #e3b341; }
+  .muted { color: var(--dim); }
+  .toggle { font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+  .toggle input { width: auto; }
+</style>
+</head>
+<body>
+<header>
+  <h1>VerifyAI</h1>
+  <span class="tagline">claims extracted, evidence retrieved, quotes verified — the assessment is arithmetic on that evidence</span>
+  <span class="spacer"></span>
+  <span class="status" id="apiStatus">checking API…</span>
+</header>
+
+<main>
+  <!-- ---------------- input ---------------- -->
+  <section>
+    <div class="card">
+      <h2>1 · Content to check</h2>
+      <div class="body">
+        <div class="row" role="tablist" aria-label="Input type" style="margin-bottom:10px">
+          <button class="mini" id="tabText" aria-selected="true">Paste article text</button>
+          <button class="mini" id="tabUrl" aria-selected="false">From a URL</button>
+        </div>
+
+        <div id="paneText">
+          <textarea id="article" placeholder="Paste the article, post or transcript here. Verification works on 3–6 atomic claims extracted from this text." spellcheck="false"></textarea>
+        </div>
+        <div id="paneUrl" style="display:none">
+          <input type="text" id="url" placeholder="https://example.com/article" spellcheck="false" />
+          <p class="hint">The page is fetched, its main text extracted, and claims are pulled from that.</p>
+        </div>
+
+        <label class="field"><span>Evidence mode</span>
+          <select id="mode">
+            <option value="auto">auto — live sources</option>
+            <option value="live">live — Wikipedia / OpenAlex / PubMed / fact-check</option>
+            <option value="offline">offline — local demo corpus (no network)</option>
+            <option value="snapshot">snapshot — captured demo backup</option>
+          </select>
+        </label>
+
+        <div class="row" style="margin-top:14px">
+          <button class="primary" id="run">Verify</button>
+          <button id="clear">Clear</button>
+          <span class="muted" id="elapsed"></span>
+        </div>
+
+        <div class="progress" id="progress" aria-live="polite">
+          <span class="step" data-stage="S1">S1 claims</span>
+          <span class="step" data-stage="ground">quote guard</span>
+          <span class="step" data-stage="S2">S2 retrieval</span>
+          <span class="step" data-stage="S3">S3 stance</span>
+          <span class="step" data-stage="S4">S4 score</span>
+        </div>
+
+        <div class="samples" id="samples"></div>
+        <p class="hint">Prepared inputs each exercise one outcome: a confirmed figure, a contradicted health claim, a right fact with the wrong scope, and evidence too thin to judge. Nothing here returns a verdict without cited, quote-verified sources.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>How to read a result</h2>
+      <div class="body audit" style="font-family:inherit;font-size:13px">
+        <p style="margin:0 0 8px"><strong style="color:var(--ink)">Stance direction</strong> — do the verified quotes point toward or away from the claim. Ranges −1 (all evidence against) to +1 (all for).</p>
+        <p style="margin:0 0 8px"><strong style="color:var(--ink)">Evidence strength</strong> — how good that evidence is: credibility, relevance, independence, freshness, context. It is <em>not</em> a probability the claim is true, and a claim can have strong evidence against it.</p>
+        <p style="margin:0"><strong style="color:var(--ink)">Verdict</strong> — the two combined, with an explicit <code>INSUFFICIENT EVIDENCE</code> when fewer than two independent sources carry a stance.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------------- results ---------------- -->
+  <section>
+    <div class="banner" id="banner"></div>
+    <div id="error"></div>
+    <div class="card" id="placeholder">
+      <div class="empty">
+        Paste content and choose <strong style="color:var(--ink)">Verify</strong>. A run shows each extracted claim, the quote it came from in your own text, the sources retrieved for it, what each source says, and the arithmetic that produced the assessment.
+      </div>
+    </div>
+    <div id="results"></div>
+    <div id="audit"></div>
+  </section>
+</main>
+
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------ state */
+const state = { source: "text", busy: false, timers: [] };
+const $ = (id) => document.getElementById(id);
+const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (ch) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+const pct = (value) => `${Math.round((Number(value) || 0) * 100)}%`;
+const num = (value, digits = 2) => (Number.isFinite(Number(value)) ? Number(value).toFixed(digits) : "—");
+
+const VERDICT_CLASS = {
+  "SUPPORTED": "v-supported",
+  "REFUTED": "v-refuted",
+  "CONFLICTING EVIDENCE": "v-conflicting",
+  "INSUFFICIENT EVIDENCE": "v-insufficient",
+  "MIXED / PARTIALLY SUPPORTED": "v-mixed",
+};
+const VERDICT_MEANING = {
+  "SUPPORTED": "Independent sources that pass the quote guard state the claim.",
+  "REFUTED": "Independent sources that pass the quote guard state the opposite.",
+  "CONFLICTING EVIDENCE": "Credible sources disagree; both sides are shown rather than averaged away.",
+  "INSUFFICIENT EVIDENCE": "Too few independent, quote-verified sources to assess this claim either way.",
+  "MIXED / PARTIALLY SUPPORTED": "Some verified support, but not enough strength or independence for a clean call.",
+};
+
+/* ------------------------------------------------------------- api plumbing */
+async function api(path, options) {
+  const response = await fetch(path, options);
+  const text = await response.text();
+  let payload = null;
+  try { payload = text ? JSON.parse(text) : null; } catch (_) { payload = null; }
+  if (!response.ok) {
+    const detail = payload && (payload.detail ?? payload.message);
+    throw new Error(typeof detail === "string" ? detail : `Request failed with ${response.status}`);
+  }
+  if (payload === null) throw new Error("The API returned a body that was not JSON.");
+  return payload;
+}
+
+async function loadApiStatus() {
+  const el = $("apiStatus");
+  try {
+    const [health, config] = await Promise.all([api("/health"), api("/api/config")]);
+    el.textContent = `API ${health.status} · S1 ${config.s1_provider} · S3 ${config.s3_mode}${config.snapshot_available ? " · snapshot ready" : ""}`;
+    el.className = "status ok";
+  } catch (err) {
+    el.textContent = "API unreachable";
+    el.className = "status bad";
+  }
+}
+
+async function loadSamples() {
+  try {
+    const data = await api("/api/samples");
+    const box = $("samples");
+    box.innerHTML = "";
+    (data.samples || []).forEach((sample) => {
+      const button = document.createElement("button");
+      button.className = "mini";
+      button.textContent = sample.label || sample.id;
+      button.title = sample.expect || "";
+      button.onclick = () => {
+        setSource("text");
+        $("article").value = sample.article;
+        render();
+      };
+      box.appendChild(button);
+    });
+  } catch (_) {
+    /* samples are a convenience; a missing file must not break the page */
+  }
+}
+
+/* ------------------------------------------------------------------ render */
+function setSource(which) {
+  state.source = which;
+  $("paneText").style.display = which === "text" ? "" : "none";
+  $("paneUrl").style.display = which === "url" ? "" : "none";
+  $("tabText").setAttribute("aria-selected", String(which === "text"));
+  $("tabUrl").setAttribute("aria-selected", String(which === "url"));
+  $("tabText").classList.toggle("primary", which === "text");
+  $("tabUrl").classList.toggle("primary", which === "url");
+}
+
+function stageIndex(name) {
+  if (name.startsWith("S1 claim")) return "S1";
+  if (name.startsWith("S1 article")) return "ground";
+  if (name.startsWith("S2")) return "S2";
+  if (name.startsWith("S3")) return "S3";
+  return "S4";
+}
+
+function paintProgress(stages) {
+  const steps = [...document.querySelectorAll(".progress .step")];
+  steps.forEach((step) => { step.className = "step"; step.innerHTML = step.textContent.trim(); });
+  if (!stages) {
+    steps[0].classList.add("active");
+    steps[0].innerHTML = `<span class="spinner"></span> ${esc(steps[0].textContent)}`;
+    return;
+  }
+  const seen = new Set(stages.map((stage) => stageIndex(stage.name)));
+  stages.forEach((stage, index) => {
+    const step = steps.find((el) => el.dataset.stage === stageIndex(stage.name));
+    if (!step) return;
+    const done = stage.status === "ok";
+    step.classList.add(done ? "done" : "active");
+    step.classList.toggle("st-degraded", stage.status === "degraded");
+    step.classList.toggle("st-failed", stage.status === "failed");
+    step.innerHTML = `${done ? "✓" : "•"} ${esc(step.textContent.trim())} <span class="muted">${stage.ms}ms</span>`;
+    if (index === stages.length - 1 && seen.size < steps.length) {
+      const next = steps[seen.size];
+      if (next) { next.classList.add("active"); next.innerHTML = `<span class="spinner"></span> ${esc(next.textContent.trim())}`; }
+    }
+  });
+}
+
+function gauge(label, value, hint) {
+  const width = Math.max(0, Math.min(100, (Number(value) || 0) * 100));
+  return `<div class="gauge"><div>${esc(label)} <span class="num">${num(value)}</span></div>
+    <div class="bar"><i style="width:${width}%"></i></div>
+    ${hint ? `<div class="muted" style="margin-top:5px;font-size:11.5px">${esc(hint)}</div>` : ""}</div>`;
+}
+
+function stanceBar(stance) {
+  const value = Math.max(-1, Math.min(1, Number(stance) || 0));
+  const half = 50;
+  const fill = Math.abs(value) * half;
+  const left = value < 0 ? half - fill : half;
+  const cls = value < -0.05 ? "neg" : value > 0.05 ? "pos" : "";
+  return `<div class="gauge"><div>Stance direction <span class="num">${value > 0.05 ? "+" : ""}${num(value)}</span></div>
+    <div class="bar" style="position:relative">
+      <span style="position:absolute;top:0;bottom:0;left:${left}%;width:${Math.max(fill, 1.5)}%;background:${value < -0.05 ? "var(--refute)" : value > 0.05 ? "var(--support)" : "var(--neutral)"};border-radius:999px"></span>
+      <span style="position:absolute;top:-3px;bottom:-3px;left:50%;width:1px;background:#39424c"></span>
+    </div>
+    <div class="muted" style="margin-top:5px;font-size:11.5px">−1 sources against · 0 balanced or none · +1 sources for</div></div>`;
+}
+
+const COMPONENTS = [
+  ["C", "source credibility", "#58a6ff"],
+  ["R", "evidence relevance", "#bc8cff"],
+  ["A", "independent agreement", "#3fb950"],
+  ["T", "freshness", "#d29922"],
+  ["K", "contextual consistency", "#39c5cf"],
+];
+
+function breakdown(report) {
+  const max = 0.3;  // largest possible contribution, for a common scale
+  const rows = COMPONENTS.map(([key, meaning, color]) => {
+    const value = report.scores?.[key];
+    const contribution = report.contributions?.[key] ?? 0;
+    const width = Math.max(0, Math.min(100, (contribution / max) * 100));
+    return `<tr><td class="k">${key}</td><td style="width:100%">
+        <div>${esc(meaning)} <span class="muted">${num(value)} × ${key === "C" || key === "R" ? "0.30" : key === "A" ? "0.20" : "0.10"}</span></div>
+        <div class="cbits"><i style="width:${width}%;background:${color}"></i></div></div>
+      <td style="text-align:right">${num(contribution, 3)}</td></tr>`;
+  }).join("");
+  return `<div class="components"><table>${rows}</table>
+    <div class="muted" style="margin-top:6px">S<sub>raw</sub> = 0.30C + 0.30R + 0.20A + 0.10T + 0.10K = <strong style="color:var(--ink)">${num(report.score_raw)}</strong>,
+    then shrunk toward 0.5 by a factor of ${num(report.shrinkage_factor)} because ${report.audit.n_independent} independent source${report.audit.n_independent === 1 ? "" : "s"} carried a stance.</div></div>`;
+}
+
+function evidenceCard(item) {
+  const verified = item.quote_verified;
+  // "verified" is not one claim: matching fetched page text and matching a 300-char
+  // search snippet are different strengths, and the plan says the UI must not blur them.
+  const scope = verified
+    ? (item.quote_scope === "snippet"
+        ? '<span class="scope snip" title="The quote was found in the search snippet; page text was not retrieved">quote verified in the snippet only</span>'
+        : '<span class="scope full" title="The quote was found in text fetched from the source page">quote verified in fetched page text</span>')
+    : '<span class="scope none">quote not verified — excluded from the score</span>';
+  const quote = verified && item.quote
+    ? `<blockquote class="quote"><span class="label">Verified quote from this source</span>“${esc(item.quote)}”</blockquote>`
+    : "";
+  const link = item.url
+    ? `<a href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">${esc(item.title || item.domain || item.url)}</a>`
+    : `<span>${esc(item.title || item.domain || "untitled source")}</span>`;
+  const date = item.published_at ? `<span title="publication date">${esc(item.published_at)}</span>` : '<span class="muted">date unknown</span>';
+  return `<article class="ev">
+    <div class="ev-top">
+      <span class="stance s-${esc(item.stance)}">${esc(item.stance)}</span>
+      <span class="src">${link}<br><span class="dom">${esc(item.domain || "")} · ${esc(item.source_kind || "web")}</span></span>
+    </div>
+    ${quote}
+    ${item.rationale ? `<div class="rationale">${esc(item.rationale)}</div>` : ""}
+    <div class="ev-foot">${scope}<span>relevance ${num(item.relevance)}</span><span>credibility ${num(item.credibility)}</span>${date}</div>
+  </article>`;
+}
+
+function claimCard(report, details, index) {
+  const claim = report.claim || {};
+  const verdictClass = VERDICT_CLASS[report.verdict] || "v-insufficient";
+  const dropped = report.audit.hallucinated_quotes_dropped || 0;
+  const quote = claim.article_quote
+    ? `<blockquote class="quote"><span class="label">Verbatim in your text — claim ${esc(claim.id || `#${index + 1}`)}</span>“${esc(claim.article_quote)}”</blockquote>`
+    : `<blockquote class="quote missing"><span class="label">Article quote</span>This claim could not be matched to a verbatim sentence of the submitted text, so it was not carried forward as verified.</blockquote>`;
+
+  const evidence = (report.evidence || []).map(evidenceCard).join("");
+  const unverified = ((details && details.sources) || []).filter((s) => !s.quote_verified);
+  const unverifiedNote = unverified.length
+    ? `<p class="hint">${unverified.length} retrieved source${unverified.length === 1 ? "" : "s"} produced no quote that survived verification, so it${unverified.length === 1 ? " was" : " were"} left out of the score.</p>`
+    : "";
+
+  let footer = "";
+  if (report.verdict === "INSUFFICIENT EVIDENCE") {
+    footer = `<div class="insufficient-note"><strong>Not enough evidence to assess.</strong>
+      ${report.audit.n_retrieved === 0
+        ? "No source returned material relevant enough to cite."
+        : `${report.audit.n_used} of ${report.audit.n_retrieved} retrieved item${report.audit.n_retrieved === 1 ? "" : "s"} carried a verified quote, across ${report.audit.n_independent} independent domain${report.audit.n_independent === 1 ? "" : "s"}.
+           Two independent sources are required before a verdict is offered.`}
+      The sources listed above are shown so you can read them — that is the point of this tool.</div>`;
+  } else if (report.conflicts && report.conflicts.length) {
+    footer = `<div class="insufficient-note"><strong>Sources disagree.</strong> Both directions are kept in the score rather than cancelled out: ${report.conflicts.slice(0, 4).map(esc).join(", ")}${report.conflicts.length > 4 ? `, +${report.conflicts.length - 4} more` : ""}.</div>`;
+  }
+
+  return `<div class="card claim">
+    <div class="claim-head">
+      <div class="claim-text">${esc(claim.text || "unavailable")}</div>
+      ${quote}
+      <div class="meta">
+        <span class="chip verdict ${verdictClass}">${esc(report.verdict)}</span>
+        <span class="chip type">${esc(claim.type || "other")}</span>
+        ${claim.time_sensitive ? '<span class="chip" title="This claim was scored with a short freshness half-life">time-sensitive</span>' : ""}
+        ${report.evidence.length ? `<span class="chip">${report.evidence.length} verified evidence item${report.evidence.length === 1 ? "" : "s"}</span>` : '<span class="chip">0 verified evidence items</span>'}
+        ${dropped ? `<span class="chip" title="Quotes that could not be found in the retrieved text">${dropped} quote${dropped === 1 ? "" : "s"} dropped</span>` : ""}
+      </div>
+      <div class="muted" style="margin-top:8px;font-size:12.5px">${esc(VERDICT_MEANING[report.verdict] || "")}</div>
+    </div>
+    <div class="scores">
+      ${stanceBar(report.stance_score)}
+      ${gauge("Evidence strength", report.evidence_strength, "quality of the evidence, not a probability of truth")}
+      ${breakdown(report)}
+    </div>
+    ${report.evidence.length ? `<div class="evidence"><h3>Evidence and verified quotes</h3>${evidence}${unverifiedNote}</div>` :
+      (report.audit.n_retrieved ? `<div class="evidence"><h3>What was retrieved</h3>${unverifiedNote || '<p class="hint">Nothing retrieved for this claim passed the quote guard.</p>'}</div>` : "")}
+    ${footer}
+  </div>`;
+}
+
+function renderAudit(data) {
+  const summary = data.retrieval_summary || {};
+  const s3 = data.s3_audit || {};
+  const grounding = data.grounding || {};
+  const totals = (data.per_claim_retrieval || []).reduce((acc, claim) => {
+    const retrieval = claim.retrieval || {};
+    acc.queried += retrieval.sources_queried || 0;
+    acc.ok += retrieval.sources_ok || 0;
+    acc.failed += retrieval.failed_source_names ? retrieval.failed_source_names.length : 0;
+    (retrieval.failed_source_names || []).forEach((name) => acc.names.add(name));
+    return acc;
+  }, { queried: 0, ok: 0, failed: 0, names: new Set() });
+
+  const cells = [
+    ["claims verified", (data.report.claims || []).length],
+    ["evidence items", summary.evidence_items ?? 0],
+    ["distinct domains", summary.distinct_domains ?? 0],
+    ["quotes verified", summary.quote_verified_items ?? 0],
+    ["snippet-only items", summary.snippet_only_items ?? 0],
+    ["claims with no evidence", summary.claims_without_evidence ?? 0],
+    ["sources queried", `${totals.ok}/${totals.queried}`],
+    ["S3 stance assigned", `${s3.decisive ?? 0}/${s3.evidence_analyzed ?? 0}`],
+    ["quotes dropped by guard", s3.quote_dropped_count ?? 0],
+    ["claims dropped by quote guard", grounding.claims_dropped_ungrounded ?? 0],
+  ];
+
+  const warnings = (data.warnings || []).map((text) => `<div class="warn">⚠ ${esc(text)}</div>`).join("");
+  const stages = (data.stages || []).map((stage) =>
+    `<li><span class="st-${esc(stage.status)}">●</span><span class="name">${esc(stage.name)} <span class="muted">${esc(stage.detail || "")}</span></span><span class="ms">${stage.ms} ms</span></li>`).join("");
+
+  $("audit").innerHTML = `<div class="card" style="margin-top:16px">
+    <h2>Audit trail — how this assessment was produced</h2>
+    <div class="body audit">
+      <div class="grid">${cells.map(([key, value]) => `<div><span class="k">${esc(key)}</span><span class="v">${esc(value)}</span></div>`).join("")}</div>
+      <ul class="stages">${stages}</ul>
+      ${warnings}
+      <p class="disclaimer">${esc(data.report.disclaimer || "")} Mode: ${esc(data.mode)} · analyzer: ${esc(s3.analyzer || "—")} · S1 provider: ${esc((data.s1 || {}).provider || "—")}${data.demo_backup ? " · <strong>DEMO BACKUP: captured snapshot, not a live retrieval</strong>" : ""}</p>
+    </div></div>`;
+}
+
+function render(data) {
+  const claims = (data.report && data.report.claims) || [];
+  const details = new Map((data.per_claim_retrieval || []).map((item) => [item.claim_id, item]));
+  if (!claims.length) {
+    $("results").innerHTML = `<div class="card"><div class="empty">No claims survived extraction and the verbatim-quote guard. Nothing was verified.</div></div>`;
+    renderAudit(data);
+    return;
+  }
+  $("results").innerHTML = claims
+    .map((report, index) => claimCard(report, details.get(report.claim.id), index))
+    .join("");
+
+  const banner = $("banner");
+  if (data.demo_backup) {
+    banner.className = "banner backup on";
+    banner.innerHTML = "<strong>Demo backup.</strong> Evidence came from a captured snapshot rather than a live search, so it is a rehearsal of the pipeline, not current retrieval.";
+  } else if (data.mode === "offline") {
+    banner.className = "banner backup on";
+    banner.innerHTML = "<strong>Offline mode.</strong> Sources are the local demo corpus, tagged mock with 0.10 credibility, so scores stay deliberately low.";
+  } else {
+    banner.className = "banner on";
+    banner.innerHTML = `<strong>${claims.length} claim${claims.length === 1 ? "" : "s"} extracted from your text.</strong> Each was checked against retrieved sources; only quotes found verbatim in those sources are counted in a score.`;
+  }
+  renderAudit(data);
+}
+
+/* -------------------------------------------------------------------- run */
+function startProgress() {
+  $("progress").classList.add("on");
+  paintProgress(null);
+  const began = Date.now();
+  state.timers.push(setInterval(() => {
+    $("elapsed").textContent = `${((Date.now() - began) / 1000).toFixed(1)}s`;
+  }, 100));
+  return began;
+}
+function stopProgress(stages, began) {
+  state.timers.forEach(clearInterval);
+  state.timers = [];
+  if (stages) paintProgress(stages);
+  else $("progress").classList.remove("on");
+  if (began) $("elapsed").textContent = `done in ${((Date.now() - began) / 1000).toFixed(1)}s`;
+}
+
+async function run() {
+  if (state.busy) return;
+  const body = { mode: $("mode").value, as_of: new Date().toISOString().slice(0, 10) };
+  if (state.source === "url") {
+    body.url = $("url").value.trim();
+    if (!body.url) return showError("Enter a URL first, or switch to pasted text.");
+  } else {
+    body.article_text = $("article").value.trim();
+    if (body.article_text.length < 40) {
+      return showError("Paste at least a couple of sentences — a claim needs somewhere to be quoted from.");
+    }
+  }
+
+  state.busy = true;
+  $("run").disabled = true;
+  $("run").textContent = "Verifying…";
+  $("error").innerHTML = "";
+  $("results").innerHTML = "";
+  $("audit").innerHTML = "";
+  const began = startProgress();
+
+  try {
+    const data = await api("/api/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    stopProgress(data.stages, began);
+    render(data);
+  } catch (err) {
+    stopProgress(null, began);
+    showError(err.message || String(err));
+  } finally {
+    state.busy = false;
+    $("run").disabled = false;
+    $("run").textContent = "Verify";
+  }
+}
+
+function showError(message) {
+  $("error").innerHTML = `<div class="error"><strong>That run did not complete.</strong>${esc(message)}
+    <div style="margin-top:8px;color:var(--muted)">Nothing was invented to fill the gap. Switch the evidence mode to <em>offline</em> and run again for a result from the local demo corpus.</div></div>`;
+  $("results").innerHTML = "";
+}
+
+/* ----------------------------------------------------------------- wiring */
+$("tabText").onclick = () => setSource("text");
+$("tabUrl").onclick = () => setSource("url");
+$("run").onclick = run;
+$("clear").onclick = () => {
+  $("article").value = "";
+  $("url").value = "";
+  $("results").innerHTML = "";
+  $("audit").innerHTML = "";
+  $("error").innerHTML = "";
+  $("banner").className = "banner";
+  $("progress").classList.remove("on");
+  $("elapsed").textContent = "";
+  $("placeholder").style.display = "";
+};
+document.addEventListener("keydown", (event) => {
+  if ((event.metaKey || event.ctrlKey) && event.key === "Enter") run();
+});
+$("article").addEventListener("input", () => { $("placeholder").style.display = $("article").value.trim() ? "none" : ""; });
+
+setSource("text");
+loadApiStatus();
+loadSamples();
+</script>
+</body>
+</html>

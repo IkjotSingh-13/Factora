@@ -1,9 +1,0 @@
-# S2 retrieval module dependencies (Mansimran).
-# Keep this minimal: the plan says no heavy infra before the MVP is stable.
-requests>=2.31,<3
-pydantic>=2.6,<3
-pytest>=8,<10
-
-# --- optional / stretch only (do not install before the demo works) ---------
-# sentence-transformers>=2.7      # embedding backend for ranking.SentenceTransformerBackend
-# lxml>=5                         # faster HTML/XML parsing

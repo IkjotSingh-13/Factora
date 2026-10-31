@@ -1,0 +1,102 @@
+{
+  "note": "Labelled claim set for the QA pass in plan §4 (14-17h) and §3 (Taranpreet). Each row states what the pipeline should be able to do with the evidence available to it, not what is true in the world. `scripts/run_test_set.py` runs these and writes data/test_set_results.json with measured outcomes; nothing in this repo quotes an accuracy number that this script did not produce.",
+  "fields": {
+    "expect_direction": "the sign of stance_score the run should produce: support | refute | none",
+    "expect_verdict": "optional exact verdict the run should produce",
+    "must_be_decisive": "when false, INSUFFICIENT EVIDENCE is an acceptable outcome and the row measures only direction",
+    "claim": "the assertion under test"
+  },
+  "cases": [
+    {
+      "id": "eiffel-height",
+      "claim": "The Eiffel Tower is 330 metres tall.",
+      "article": "The Eiffel Tower is 330 metres tall. That figure includes the broadcasting antenna added to the tower. A travel brief repeats the height of the Eiffel Tower.",
+      "label": "supported",
+      "expect_direction": "support",
+      "must_be_decisive": false,
+      "why": "The corpus sources state the same figure, so evidence should point with the claim."
+    },
+    {
+      "id": "eiffel-wrong-height",
+      "claim": "The Eiffel Tower is 1,000 metres tall.",
+      "article": "One report claimed the Eiffel Tower is 1,000 metres tall. That number appeared in a hoax thread.",
+      "label": "refuted",
+      "expect_direction": "refute",
+      "must_be_decisive": false,
+      "why": "Sources give 330 m; a numeric contradiction must be read against the claim, not as agreement."
+    },
+    {
+      "id": "great-wall-visible",
+      "claim": "The Great Wall of China is visible from space with the naked eye.",
+      "article": "The Great Wall of China is visible from space with the naked eye. An image post repeats that statement as an established fact.",
+      "label": "refuted-myth",
+      "expect_direction": "refute",
+      "must_be_decisive": false,
+      "why": "The classic myth case: retrieved sources deny it, so direction must be negative."
+    },
+    {
+      "id": "vitamin-c-prevents",
+      "claim": "Vitamin C supplements prevent the common cold in most adults.",
+      "article": "Vitamin C supplements prevent the common cold in most adults. A retailer made that claim in an advertising campaign.",
+      "label": "refuted-or-conflicting",
+      "expect_direction": "refute",
+      "must_be_decisive": false,
+      "why": "The corpus contains both the marketing restatement and the fact-check denial; at minimum the refutation must be found."
+    },
+    {
+      "id": "lightning-myth",
+      "claim": "Lightning never strikes the same place twice.",
+      "article": "A safety leaflet states that lightning never strikes the same place twice. The leaflet was printed in 2009.",
+      "label": "refuted-myth",
+      "expect_direction": "refute",
+      "must_be_decisive": false,
+      "why": "Tests the polarity rule: a source affirming repeat strikes contradicts a claim phrased with 'never'."
+    },
+    {
+      "id": "empire-state-strikes",
+      "claim": "The Empire State Building is struck by lightning about eighty times each year.",
+      "article": "The Empire State Building is struck by lightning about eighty times each year. A safety leaflet repeats the figure.",
+      "label": "supported",
+      "expect_direction": "support",
+      "must_be_decisive": false,
+      "why": "A number the sources carry; agreement should be found without a negation cue."
+    },
+    {
+      "id": "fabricated-consortium",
+      "claim": "A consortium has finalised a partnership with the national space agency to build a hydrogen aircraft.",
+      "article": "A newly formed consortium has finalised a partnership with the national space agency. The consortium will build a hydrogen aircraft by next spring. The announcement came from an account with eleven followers.",
+      "label": "insufficient",
+      "expect_direction": "none",
+      "must_be_decisive": false,
+      "why": "Nothing retrievable covers this. The correct output is a non-verdict, not a low-confidence 'false'."
+    },
+    {
+      "id": "unquoteable-claim",
+      "claim": "Battery plants are always a poor investment for regional economies.",
+      "article": "A widely shared travel brief states that the Eiffel Tower is 330 metres tall. Battery plants are always a poor investment for regional economies in my view.",
+      "label": "opinion",
+      "expect_direction": "none",
+      "expect_verdict": "INSUFFICIENT EVIDENCE",
+      "must_be_decisive": false,
+      "why": "An opinion stated in the article must not come back with a stance-bearing verdict."
+    },
+    {
+      "id": "quote-guard-must-hold",
+      "claim": "The Eiffel Tower was completed in 1889 for the World's Fair.",
+      "article": "The Eiffel Tower was completed in 1889 for the World's Fair. The tower was completed for the 1889 World's Fair.",
+      "label": "supported",
+      "expect_direction": "support",
+      "must_be_decisive": false,
+      "why": "Also checks the invariant that every displayed quote is literally present in the retrieved text."
+    },
+    {
+      "id": "time-sensitive-figure",
+      "claim": "The company's shares rose 6 percent in after-hours trading on Tuesday.",
+      "article": "The company's shares rose 6 percent in after-hours trading on Tuesday. The figure was published by the exchange.",
+      "label": "insufficient",
+      "expect_direction": "none",
+      "must_be_decisive": false,
+      "why": "A market-moving detail no general source will carry; must degrade to insufficient rather than guess."
+    }
+  ]
+}

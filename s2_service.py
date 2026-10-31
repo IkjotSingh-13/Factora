@@ -284,6 +284,9 @@ def apply_analysis(
         target["stance"] = stance
         target["quote"] = quote if verified else ""
         target["quote_verified"] = verified
+        # Record *what* was checked, so the report can never overstate a snippet match
+        # as a match against the source. Mirrors the region chosen just above.
+        target["quote_scope"] = ("full_text" if page_text else "snippet") if verified else ""
         target["rationale"] = str(_safe_get(analysis, "rationale", default="") or "")
 
         context_score = _safe_get(analysis, "context_score")

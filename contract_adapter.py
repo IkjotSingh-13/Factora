@@ -131,6 +131,8 @@ def to_evidence_item(
         "stance": stance,
         "quote": "",
         "quote_verified": False,
+        # Set by the S3 merge once a quote has been checked: which text it was found in.
+        "quote_scope": "",
         "rationale": "",
         # --- K-term proxy from retrieval coverage; scoring may override ---
         "context_score": float(coverage) if coverage is not None else DEFAULT_CONTEXT_SCORE,
@@ -306,7 +308,15 @@ def to_claim_bundle(
         "quote_guard": quote_guard_map(evidence),
     }
     if include_extras:
-        bundle["extras"] = {"entities": extract_entities(claim)}
+        extras: dict[str, Any] = {"entities": extract_entities(claim)}
+        # The per-claim retrieval audit (sources queried/ok/failed, timings, dedupe
+        # counts). Lives under "extras" so the lead's ClaimEvidenceBundle payload is
+        # unchanged for anyone not asking for it; the report layer needs it to say
+        # *why* a claim came out thin, which is plan §1 step 6.
+        if audit is not None:
+            dump = getattr(audit, "model_dump", None) or getattr(audit, "to_dict", None)
+            extras["retrieval_audit"] = dump() if callable(dump) else {}
+        bundle["extras"] = extras
     return bundle
 
 

@@ -4,41 +4,213 @@
     "url": "https://ods.od.nih.gov/factsheets/VitaminC-HealthProfessional/",
     "published_at": "2024-01-15",
     "text": "Vitamin C (ascorbic acid) is a water-soluble vitamin. Many people take vitamin C supplements to prevent or treat the common cold. Overall, the evidence to date suggests that routine supplementation with vitamin C does not reduce the incidence of the common cold in the general population, although it may shorten duration slightly in some groups. Most trials found no meaningful reduction in cold incidence among adults in the community.",
-    "keywords": ["vitamin", "cold", "prevent", "common", "supplement", "immunity", "adults"]
+    "keywords": [
+      "vitamin",
+      "cold",
+      "prevent",
+      "common",
+      "supplement",
+      "immunity",
+      "adults"
+    ]
   },
   {
     "title": "Common cold — Overview",
     "url": "https://en.wikipedia.org/wiki/Common_cold",
     "published_at": "2024-06-01",
     "text": "The common cold is a viral infection of the upper respiratory tract. Over 200 virus strains are implicated. No vaccine exists. Prevention is mainly hand washing and avoiding close contact with infected people. Vitamin C supplementation has not been shown to prevent colds in the general population; zinc may shorten duration in some trials.",
-    "keywords": ["cold", "common", "prevent", "vitamin", "zinc", "virus", "adults"]
+    "keywords": [
+      "cold",
+      "common",
+      "prevent",
+      "vitamin",
+      "zinc",
+      "virus",
+      "adults"
+    ]
   },
   {
     "title": "FACT CHECK: Does vitamin C prevent the common cold?",
     "url": "https://www.snopes.com/fact-check/vitamin-c-common-cold/",
     "published_at": "2023-11-02",
     "text": "Rating: Mixed. Claims that vitamin C reliably prevents the common cold in most adults are not supported by the body of randomized trials. Some studies in marathon runners and soldiers show a reduced incidence, but community trials in adults show no significant prevention effect.",
-    "keywords": ["vitamin", "cold", "common", "prevent", "fact", "check", "adults"]
+    "keywords": [
+      "vitamin",
+      "cold",
+      "common",
+      "prevent",
+      "fact",
+      "check",
+      "adults"
+    ]
   },
   {
     "title": "Eiffel Tower — Facts and figures",
     "url": "https://www.toureiffel.paris/en/the-monument/history",
     "published_at": "2024-03-20",
     "text": "The Eiffel Tower was completed in 1889 for the World's Fair. It is 330 metres tall including antennas, and was the tallest structure in the world until 1930. It was designed by Gustave Eiffel's engineering company.",
-    "keywords": ["eiffel", "tower", "paris", "tall", "metres", "1889", "gustave"]
+    "keywords": [
+      "eiffel",
+      "tower",
+      "paris",
+      "tall",
+      "metres",
+      "1889",
+      "gustave"
+    ]
   },
   {
     "title": "Great Wall of China — Length and visibility",
     "url": "https://whc.unesco.org/en/list/438/",
     "published_at": "2023-09-01",
     "text": "The Great Wall was built over many centuries and its total length is estimated at 21,196 kilometres. Contrary to a common myth, the Great Wall is not visible from space with the naked eye; astronauts have repeatedly reported that it cannot be seen.",
-    "keywords": ["great", "wall", "china", "visible", "space", "length", "kilometres"]
+    "keywords": [
+      "great",
+      "wall",
+      "china",
+      "visible",
+      "space",
+      "length",
+      "kilometres"
+    ]
   },
   {
     "title": "Lightning never strikes the same place twice?",
     "url": "https://www.weather.gov/safety/lightning-science",
     "published_at": "2022-07-11",
     "text": "The saying that lightning never strikes the same place twice is false. Tall structures such as the Empire State Building are struck many times each year, and research shows lightning often re-strikes the same location within seconds.",
-    "keywords": ["lightning", "strike", "twice", "place", "myth", "empire", "state"]
+    "keywords": [
+      "lightning",
+      "strike",
+      "twice",
+      "place",
+      "myth",
+      "empire",
+      "state"
+    ]
+  },
+  {
+    "title": "Eiffel Tower — official measurements",
+    "url": "https://www.parisinfo.com/eiffel-tower",
+    "published_at": "2025-06-02",
+    "text": "Official measurements: the Eiffel Tower stands 330 metres tall to its tip, including the broadcasting antenna installed in March 2022. Before the antenna was added the structure measured 324 metres. The tower has always been the tallest structure within the city of Paris.",
+    "keywords": [
+      "eiffel",
+      "tower",
+      "tall",
+      "metres",
+      "paris",
+      "antenna",
+      "330",
+      "324",
+      "structure"
+    ]
+  },
+  {
+    "title": "Structure data: Eiffel Tower",
+    "url": "https://www.emporis.com/structures/eiffel-tower",
+    "published_at": "2024-11-11",
+    "text": "Height to tip: 330 metres (1,083 feet). Architectural height: 300 metres (984 feet). The Eiffel Tower was completed in 1889 for the Exposition Universelle and remained the world's tallest structure until 1930.",
+    "keywords": [
+      "eiffel",
+      "tower",
+      "height",
+      "metres",
+      "tall",
+      "1889",
+      "tip",
+      "structure",
+      "world"
+    ]
+  },
+  {
+    "title": "Fact check: the Eiffel Tower's height",
+    "url": "https://www.france24.com/en/fact-check-eiffel-height",
+    "published_at": "2025-01-20",
+    "text": "Fact check: the widely circulated figure of 330 metres for the Eiffel Tower is correct. Reader claims that the tower is 312 metres tall are not supported; that number describes the original roof height before broadcast equipment was added.",
+    "keywords": [
+      "eiffel",
+      "tower",
+      "metres",
+      "tall",
+      "height",
+      "fact",
+      "check",
+      "330",
+      "claim"
+    ]
+  },
+  {
+    "title": "Smithsonian Air and Space: what is visible from orbit",
+    "url": "https://airandspace.si.edu/expert-answer/great-wall-visible",
+    "published_at": "2023-09-14",
+    "text": "Astronauts report that the Great Wall of China is not readily visible to the naked eye from low Earth orbit. Its average width is about 5 to 8 metres, far below the resolving power of the human eye at that altitude. Major roads, runways and city lights are easier to identify than the wall.",
+    "keywords": [
+      "great",
+      "wall",
+      "china",
+      "visible",
+      "space",
+      "naked",
+      "eye",
+      "orbit",
+      "astronaut",
+      "width",
+      "myth"
+    ]
+  },
+  {
+    "title": "NASA — images of Earth from the ISS",
+    "url": "https://www.nasa.gov/earth-from-orissa/great-wall",
+    "published_at": "2022-04-08",
+    "text": "Expedition photographers aboard the International Space Station have imaged the Great Wall of China using long lenses. In the same imagery, reservoirs, motorway interchanges and airfields are visible without magnification. No astronaut has confirmed the wall as visible to the naked eye.",
+    "keywords": [
+      "great",
+      "wall",
+      "china",
+      "visible",
+      "space",
+      "naked",
+      "eye",
+      "nasa",
+      "astronaut",
+      "iss",
+      "orbit"
+    ]
+  },
+  {
+    "title": "Weather service safety: lightning myths",
+    "url": "https://www.weather.gov/safety/lightning-myth-same-place",
+    "published_at": "2025-05-01",
+    "text": "Lightning can and does strike the same place repeatedly. The Empire State Building is struck roughly 80 to 100 times per year. The saying that lightning never strikes the same place twice is a myth and is unsafe to rely on.",
+    "keywords": [
+      "lightning",
+      "strike",
+      "twice",
+      "place",
+      "empire",
+      "state",
+      "building",
+      "myth",
+      "year",
+      "never"
+    ]
+  },
+  {
+    "title": "Lightning does strike twice — and often",
+    "url": "https://www.nationalgeographic.com/science/article/lightning-myths",
+    "published_at": "2024-07-19",
+    "text": "Researchers who instrumented towers in Florida recorded repeat strikes on a single structure within the same storm. The idea that lightning never strikes the same place twice has no basis in the observational record and appears in no safety guidance.",
+    "keywords": [
+      "lightning",
+      "strike",
+      "twice",
+      "place",
+      "myth",
+      "never",
+      "towers",
+      "storm",
+      "repeat"
+    ]
   }
 ]
