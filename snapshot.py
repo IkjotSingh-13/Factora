@@ -108,6 +108,9 @@ def build_snapshot_entry(
                 "published_at": ev.published_at,
                 "source_kind": ev.source_kind,
                 "relevance": ev.relevance,
+                "full_text": getattr(ev, "full_text", "") or "",
+                "text_scope": getattr(ev, "text_scope", "snippet"),
+                "text_scope_reason": getattr(ev, "text_scope_reason", None),
             }
             for ev in evidence
         ],
@@ -211,6 +214,9 @@ class SnapshotSource(SourceAdapter):
                         "relevance": item.get("relevance"),
                         "captured_at": entry.get("captured_at"),
                         "demo_backup": True,
+                        "full_text": item.get("full_text", ""),
+                        "text_scope": item.get("text_scope", "snippet"),
+                        "text_scope_reason": item.get("text_scope_reason"),
                     },
                 )
             )

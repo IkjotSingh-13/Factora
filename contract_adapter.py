@@ -50,6 +50,10 @@ DEFAULT_STANCE = "NEUTRAL"
 DEFAULT_CONTEXT_SCORE = 0.7
 DEFAULT_FULL_TEXT = ""
 
+#: What S3 may check a quote against, per evidence item.
+SCOPE_FULL_TEXT = "full_text"     # page text available: a quote can be verified properly
+SCOPE_SNIPPET = "snippet"         # only the search snippet: a match proves much less
+
 
 def stable_evidence_id(claim_id: str, url: str) -> str:
     """Deterministic id: same claim + same url => same id, every run."""
@@ -112,9 +116,9 @@ def to_evidence_item(
         "url": url,
         "domain": str(getattr(evidence, "domain", "") or ""),
         "title": str(getattr(evidence, "title", "") or ""),
-        # S2 gives snippets from search APIs, not scraped full text
+        # snippet = what the search API returned; full_text = fetched page text
         "snippet": str(getattr(evidence, "text_or_snippet", "") or ""),
-        "full_text": DEFAULT_FULL_TEXT,
+        "full_text": str(getattr(evidence, "full_text", "") or ""),
         "published_at": to_date(getattr(evidence, "published_at", None)),
         "source_kind": str(getattr(evidence, "source_kind", "web") or "web"),
         "relevance": float(getattr(evidence, "relevance", 0.0)),
@@ -132,6 +136,31 @@ def to_evidence_item(
         "context_score": float(coverage) if coverage is not None else DEFAULT_CONTEXT_SCORE,
         "context_gap": bool(coverage is not None and coverage < 0.5),
     }
+
+
+def quote_scope(evidence: Any) -> str:
+    """Which region a quote may be verified against for this evidence item."""
+    scope = str(getattr(evidence, "text_scope", "") or "")
+    if scope == SCOPE_FULL_TEXT and str(getattr(evidence, "full_text", "") or "").strip():
+        return SCOPE_FULL_TEXT
+    return SCOPE_SNIPPET
+
+
+def quote_check_region(item: dict[str, Any], scope: str) -> str:
+    """The exact text a quote must appear in, given a scope."""
+    if scope == SCOPE_FULL_TEXT:
+        return str(item.get("full_text") or "")
+    return str(item.get("snippet") or "")
+
+
+def quote_guard_map(evidence: Iterable[Any]) -> dict[str, str]:
+    """{evidence_id: scope} so S3 knows what it is allowed to claim."""
+    guard: dict[str, str] = {}
+    for ev in evidence:
+        claim_id = str(getattr(ev, "claim_id", "") or "")
+        url = str(getattr(ev, "url", "") or "")
+        guard[stable_evidence_id(claim_id, url)] = quote_scope(ev)
+    return guard
 
 
 def to_evidence_items(
@@ -272,6 +301,9 @@ def to_claim_bundle(
         "evidence": to_evidence_items(
             evidence, claim_id=claim_payload["id"], audit=audit
         ),
+        # S3 reads this to decide what a verified quote is allowed to mean.
+        # A plain additive key: the lead's ClaimEvidenceBundle ignores extras.
+        "quote_guard": quote_guard_map(evidence),
     }
     if include_extras:
         bundle["extras"] = {"entities": extract_entities(claim)}

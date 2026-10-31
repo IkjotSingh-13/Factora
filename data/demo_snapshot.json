@@ -1,7 +1,7 @@
 {
   "snapshot_version": 1,
   "kind": "verifyai_retrieval_snapshot",
-  "captured_at": "2026-10-31T16:29:10+00:00",
+  "captured_at": "2026-10-31T20:43:02+00:00",
   "mode": "live",
   "warning": "Cached retrieval results captured before the demo. Replaying these is a DEMO BACKUP, not a live retrieval. Label it as such in the UI.",
   "config": {
@@ -19,6 +19,7 @@
     "relevance_scale": 1.45,
     "total_deadline_s": 7.0,
     "use_cache": true,
+    "fetch_full_text": 3,
     "offline": false,
     "replay_snapshot": null,
     "mock": false
@@ -31,60 +32,30 @@
         "Eiffel Tower 330 metres tall.",
         "Eiffel Tower 330"
       ],
-      "captured_at": "2026-10-31T16:29:10+00:00",
+      "captured_at": "2026-10-31T20:42:58+00:00",
       "audit_summary": {
-        "sources_ok": 3,
-        "sources_failed": 0,
+        "sources_ok": 1,
+        "sources_failed": 1,
         "returned": 6,
-        "distinct_domains": 6,
-        "duration_ms": 27,
-        "notes": []
+        "distinct_domains": 4,
+        "duration_ms": 1554,
+        "notes": [
+          "snippet-only evidence: 1 item(s) could not be fetched in full; quotes for those can only be checked against the snippet",
+          "failed sources: wikipedia"
+        ]
       },
       "evidence": [
         {
-          "url": "https://en.wikipedia.org/wiki/Eiffel_Tower",
+          "url": "https://en.wikipedia.org/wiki/Observation_tower",
           "domain": "en.wikipedia.org",
-          "title": "Eiffel Tower - Wikipedia",
-          "text_or_snippet": "The tower is 330 metres (1,083 ft) tall , [9] about the same height as an 81- storey building, and the tallest structure in Paris. Its base is square, measuring 125 metres (410 ft) on each side.",
+          "title": "Observation tower",
+          "text_or_snippet": "An observation tower is a tower built wholly or partly to provide an elevated vantage point from which people can look out over the surrounding landscape or cityscape, usually through an unobstructed 360-degree field of view. Unlike a watchtower, which is occupied for surveillance or fire detection over an extended period, a dedicated observation tower exists principally so that visitors may enjoy or study a panoramic view. Observation towers are typically at least 20 metres (66 ft) tall, so that they clear the surrounding tree canopy or built environment, and have historically been constructed in stone, brick, timber and iron; reinforced concrete, structural steel and glued laminated timber predominate in modern examples. Because a tall structure is expensive to build and maintain for viewing alone, observation functions are very often combined with another use. Many of the world's best-known observation towers are also broadcasting towers, and observation decks are routinely incorporated into water towers, church steeples, lighthouses, high-rise buildings and even the pylons of bridges. Admission fees and tower restaurants help to offset construction and running costs, and in man",
           "published_at": null,
-          "source_kind": "web",
-          "relevance": 1.0
-        },
-        {
-          "url": "https://place-du-trocadero.fr/en/eiffel-tower-height/",
-          "domain": "place-du-trocadero.fr",
-          "title": "Eiffel Tower Height 2026: 330 m (1,083 ft), Floor by Floor",
-          "text_or_snippet": "The official figures Eiffel Tower height The Eiffel Tower is 330 metres (1,083 feet) tall, antennas included. That has been its height since 15 March 2022, when a new digital radio antenna was set on top by helicopter. It was originally called the \"300-metre tower \". Here is the height of each floor, the key figures, and the story of those 30 extra metres.",
-          "published_at": null,
-          "source_kind": "web",
-          "relevance": 0.9674
-        },
-        {
-          "url": "https://eiffeltowertravel.com/height-and-facts",
-          "domain": "eiffeltowertravel.com",
-          "title": "Eiffel Tower Height: 330m (1,083 ft) - Dimensions, Weight & Fun Facts",
-          "text_or_snippet": "How tall is the Eiffel Tower ? 330 metres (1,083 ft) with antenna, 300m structural height. Explore weight (7,300 tonnes), dimensions, 1,665 steps, 20,000 lights, and 50+ fascinating facts.",
-          "published_at": null,
-          "source_kind": "web",
-          "relevance": 0.8677
-        },
-        {
-          "url": "https://geographyworlds.com/blog/eiffel-tower-paris-landmark-guide/",
-          "domain": "geographyworlds.com",
-          "title": "Eiffel Tower Height: 330 Meters Tall | History, Dimensions & Guide ...",
-          "text_or_snippet": "The Eiffel Tower height is 330 meters (1,083 feet) including its antenna. Discover its dimensions, weight, engineering, and why Paris's iconic tower attracts.",
-          "published_at": null,
-          "source_kind": "web",
-          "relevance": 0.7966
-        },
-        {
-          "url": "https://www.toureiffel.paris/en/news/history-and-culture/300-330-meters-story-towers-height",
-          "domain": "toureiffel.paris",
-          "title": "From 300 to 330 meters: the story of the Tower's height - Eiffel Tower",
-          "text_or_snippet": "The Eiffel Tower reached the height of 330 meters (1,083 feet) on March 15, 2022 thanks to this successful and dizzying operation carried out by helicopter. Which was a first !",
-          "published_at": null,
-          "source_kind": "web",
-          "relevance": 0.6615
+          "source_kind": "encyclopedia",
+          "relevance": 0.8336,
+          "full_text": "From Wikipedia, the free encyclopedia\n\nTall structure for long-distance viewing\n\nObservation tower on the Auersberg , Saxony , Germany\nHaukkavuori's observation tower in Kotka , Kymenlaakso , Finland\n\nAn observation tower is a tower built wholly or partly to provide an elevated vantage point from which people can look out over the surrounding landscape or cityscape , usually through an unobstructed 360-degree field of view. Unlike a watchtower , which is occupied for surveillance or fire detection over an extended period, a dedicated observation tower exists principally so that visitors may enjoy or study a panoramic view . Observation towers are typically at least 20 metres (66   ft) tall, so that they clear the surrounding tree canopy or built environment, and have historically been constructed in stone, brick, timber and iron; reinforced concrete , structural steel and glued laminated timber predominate in modern examples.\n\nBecause a tall structure is expensive to build and maintain for viewing alone, observation functions are very often combined with another use. Many of the world's best-known observation towers are also broadcasting towers , and observation decks are routinely incorporated into water towers , church steeples , lighthouses , high-rise buildings and even the pylons of bridges. Admission fees and tower restaurants help to offset construction and running costs, and in many cities the tower has become a landmark and a symbol of civic identity.\n\nStructures closely related to the observation tower include the crow's nest , the belvedere , the viewing platform , the observation deck , the gyro tower and the observation wheel .\n\nTerminology\n[ edit ]\n\nThe English term observation tower covers a broad family of structures, and usage overlaps with several near-synonyms. In German-speaking Europe, where the type is especially common, a purpose-built viewing tower is an Aussichtsturm , distinguished from the Wachturm (watchtower) and the Fernsehturm ( television tower ). A belvedere —from the Italian for \"beautiful view\"—is generally an architectural pavilion or gallery placed to command a prospect rather than a free-standing shaft, while a folly tower or prospect tower is an ornamental structure on a landscaped estate built at least partly for effect.\n\nA tower is usually described as an observation tower only where public or semi-public access to a viewing level is intended. Where the elevated position exists for an operational purpose—air traffic control towers , fire lookouts , prison and border guard towers, lifeguard towers —the structure is more precisely a watchtower or lookout, even though the two categories frequently exchange members: decommissioned fire lookouts are often reopened as public viewpoints, and some public towers are pressed into service as lookouts during periods of high fire risk.\n\nConstruction and usage\n[ edit ]\n\nObservation towers are conspicuous features of the landscape, since they must rise above trees, terrain and neighbouring buildings to deliver a clear view. Siting is therefore as important as height: a modest timber tower on a summit or ridge may command a far wider prospect than a much taller structure in a valley or dense urban district.\n\nStructural forms\n[ edit ]\n\nFour structural systems account for the great majority of observation towers:\n\nMasonry towers — the traditional form of the 18th- and 19th-century prospect tower, built of quarried stone or brick with a solid or cavity wall and an internal spiral stair. Masonry towers are durable and require little maintenance but are heavy, slow to build and practically limited in height.\n\nLattice and framed towers — open frameworks of wrought iron, steel or, increasingly, timber. Lattice construction offers a high strength-to-weight ratio, transparency to wind and comparatively low material cost. The Eiffel Tower (1889) is the archetype; a distinct sub-family is the hyperboloid structure , pioneered by Vladimir Shukhov , in which straight members arranged as a doubly ruled surface produce a curved, highly efficient shell.\n\nReinforced concrete shafts — the standard solution for tall post-war broadcasting and observation towers. A slipform -cast hollow shaft carries lifts, stairs and services, with a cantilevered \"turret\" or \"pod\" housing decks, restaurants and antenna galleries. Concrete supplies the mass and stiffness needed to limit sway and to support heavy antenna loads.\n\nTimber towers — historically common for cheap rural lookouts and now enjoying a revival through glued laminated timber and cross-laminated timber . The tower on the Pyramidenkogel in Carinthia , Austria, completed in 2013, reaches 100 metres (330   ft) to the tip of its antenna; its operators describe it as the tallest timber viewing tower in the world, and its structure consists of sixteen elliptically arranged larch glulam columns braced by steel diagonals. [ 1 ]\n\nEngineering considerations\n[ edit ]\n\nSlender towers are governed less by gravity loads than by lateral loads and by human comfort. Wind is the dominant design case: designers must resist both the mean drag force and dynamic effects such as vortex shedding , which can excite crosswind oscillations in a lightly damped shaft. Countermeasures include aerodynamic shaping, helical strakes, open lattice work and tuned mass dampers ; the 634-metre (2,080   ft) Tokyo Skytree additionally employs a central concrete core linked to the outer steel frame in a vibration-control system inspired by the shimbashira of traditional Japanese pagodas. In seismic regions, ductile detailing and base isolation are used to accommodate ground motion. Perceptible sway at the top of a tall tower is normal and is limited by comfort criteria rather than strength: occupants can typically detect accelerations well below any level that threatens the structure.\n\nOther recurring design problems include lightning protection, ice accretion and the risk of ice falling from high decks and antennas, cond",
+          "text_scope": "full_text",
+          "text_scope_reason": null
         },
         {
           "url": "http://dx.doi.org/10.58286/29732",
@@ -93,7 +64,58 @@
           "text_or_snippet": "The Eiffel Tower stands as a historic and iconic monument in the city of Paris. With a total height of 330 meters and constructed with wrought iron, it features a lattice metal structure. Completed in 1889 after two years of construction, the tower was initially designed for a 20-year lifespan. Now over 130 years old and welcoming millions of visitors annually, it has become a compelling example of extending the lifespan of a structure through vigilant surveillance and maintenance. Historically, the Eiffel Tower's surveillance program primarily consisted of repeated comprehensive and detailed inspections. Since 2021, it has been equipped with sensors to continuously monitor its overall behaviour. This instrumentation includes motoring of the spire’s inclination, as well as monitoring displacements, deformations, and vibrations in its four pillars. Temperature and humidity measurements ar",
           "published_at": "2024-06-29",
           "source_kind": "academic",
-          "relevance": 0.5016
+          "relevance": 0.7942,
+          "full_text": "",
+          "text_scope": "snippet",
+          "text_scope_reason": "dx.doi.org returns a landing page, not article text"
+        },
+        {
+          "url": "https://en.wikipedia.org/wiki/Eiffel_Tower",
+          "domain": "en.wikipedia.org",
+          "title": "Eiffel Tower",
+          "text_or_snippet": "The Eiffel Tower ( EYE-fəl; French: Tour Eiffel [tuʁ ɛfɛl] ) is a lattice tower on the Champ de Mars in Paris, France. It is named after the engineer Gustave Eiffel, whose company designed and built the tower from 1887 to 1889. Locally nicknamed \"La dame de fer\" (French for \"Iron Lady\") for its use of wrought iron, it was constructed as the centrepiece of the 1889 World's Fair, and to crown the centennial anniversary of the French Revolution. Although initially criticised by some of France's leading artists and intellectuals for its design, it has since become a global cultural icon of France and one of the most recognisable structures in the world. The tower received 5,889,000 visitors in 2022. The Eiffel Tower is the most visited monument with an entrance fee in the world: 6.91 million people ascended it in 2015.",
+          "published_at": null,
+          "source_kind": "encyclopedia",
+          "relevance": 0.6956,
+          "full_text": "Coordinates : 48°51′29.6″N 2°17′40.2″E ﻿ / ﻿ 48.858222°N 2.294500°E ﻿ / 48.858222; 2.294500\n\nFrom Wikipedia, the free encyclopedia\n\nTower in Paris, France\n\nThis article is about the landmark in Paris, France. For other uses, see Eiffel Tower (disambiguation) .\n\n\"300-metre tower\" and \"Tour Eiffel\" redirect here. For other tall towers, see List of tallest towers . For other uses, see Tour Eiffel (disambiguation) .\n\n\\n<!--\\n | latd = 48.8583\\n | longd = 2.2945\\n-->\"},\"coordinates\":{\"wt\":\"{{coord|48|51|29.6|N|2|17|40.2|E|region:FR-75|display=inline,title}}\"},\"mapframe-zoom\":{\"wt\":\"16\"},\"construction_start_date\":{\"wt\":\"{{Start date and age|1887|01|28|df=yes}}\"},\"completion_date\":{\"wt\":\"{{Start date and age|1889|03|31|df=yes}}<ref name=Bachman>{{cite book |url=https://books.google.com/books?id=9eGEDwAAQBAJ |last=Bachman |first=Leonard R. |title=Constructing the Architect: An Introduction to Design, Research, Planning, and Education |year=2019 |isbn=9781351665421 |page=80|publisher=Routledge }}</ref>\"},\"opening_date\":{\"wt\":\"{{Start date and age|1889|05|15|df=yes}}<ref name=Bachman />\"},\"building_type\":{\"wt\":\"Observation tower<br />Broadcasting tower\"},\"architectural\":{\"wt\":\"{{convert|300|m|ft|0|abbr=on}}<ref name=CTBUH>{{ctbuh|id=9410|title=Eiffel Tower}}</ref>\"},\"tip\":{\"wt\":\"{{convert|330|m|ft|0|abbr=on}}\"},\"antenna_spire\":{\"wt\":\"\"},\"roof\":{\"wt\":\"\"},\"top_floor\":{\"wt\":\"{{convert|276|m|ft|0|abbr=on}}<ref name=CTBUH />\"},\"floor_count\":{\"wt\":\"4 (3 accessible, 1 residual)<ref>{{cite web | url=https://www.wonders-of-the-world.net/Eiffel-Tower/Intermediate-floor.php | title=Intermediate floor of the Eiffel tower }}</ref>\"},\"elevator_count\":{\"wt\":\"8<ref name=Emporis>{{Cite web |url=https://www.emporis.com/buildings/110508 |archive-url=https://web.archive.org/web/20160422170104/https://www.emporis.com/buildings/110508 |url-status=usurped |archive-date=22 April 2016 |title=Eiffel Tower |work=[[Emporis]]}}</ref>\"},\"cost\":{\"wt\":\"\"},\"floor_area\":{\"wt\":\"\"},\"architect\":{\"wt\":\"[[Stephen Sauvestre]]\"},\"structural_engineer\":{\"wt\":\"[[Maurice Koechlin]]<br />[[Émile Nouguier]]\"},\"main_contractor\":{\"wt\":\"[[Gustave Eiffel|Compagnie des Etablissements Eiffel]]\"},\"developer\":{\"wt\":\"\"},\"owner\":{\"wt\":\"[[Paris|City of Paris]], France\"},\"operator\":{\"wt\":\"{{lang|fr|Société d'Exploitation de la Tour Eiffel}} (SETE)\"},\"website\":{\"wt\":\"{{URL|https://www.toureiffel.paris/en|toureiffel.paris}}\"},\"references\":{\"wt\":\"I. {{note|talleststatus}}{{Cite web |url=https://www.emporis.com/buildings/110508 |archive-url=https://web.archive.org/web/20160422170104/https://www.emporis.com/buildings/110508 |url-status=usurped |archive-date=22 April 2016 |title=Eiffel Tower |work=[[Emporis]]}}\\n{{Infobox UNESCO World Heritage Site\\n |part_of = [[Paris, Banks of the Seine]]\\n |criteria = Cultural: i, ii, iv\\n |ID = 600\\n |year = 1991\\n |child = yes\\n}}\"},\"embedded\":{\"wt\":\"{{Infobox designation list\\n|embed=yes\\n|designation1=Monument historique\\n|designation1_offname=Tour Eiffel\\n|designation1_type=Classé\\n|designation1_number= \\n|designation1_date=1964\\n}}\"}},\"i\":0}}]}'>\nEiffel Tower\n\nTour Eiffel   ( French )\n\nSeen from the Champ de Mars , 2009\n\nRecord   height\n\nTallest in the world from 1889 to 1930 [I]\n\nPreceded   by Washington Monument\n\nSurpassed   by Chrysler Building\n\nGeneral information\n\nType Observation tower\nBroadcasting tower\n\nLocation 7th arrondissement of Paris , France\n\nCoordinates 48°51′29.6″N 2°17′40.2″E ﻿ / ﻿ 48.858222°N 2.294500°E ﻿ / 48.858222; 2.294500 [[Geographic coordinate system|Coordinates]]: {{#parsoid\\u0000fragment:23}}<span class=\\\"plainlinks nourlexpansion\\\">[https://geohack.toolforge.org/geohack.php?pagename=Eiffel_Tower&params=48_51_29.6_N_2_17_40.2_E_region:FR-75_type:landmark <span class=\\\"geo-default\\\"><span class=\\\"geo-dms\\\" title=\\\"Maps, aerial photos, and other data for this location\\\"><span class=\\\"latitude\\\">48°51′29.6″N</span> <span class=\\\"longitude\\\">2°17′40.2″E</span></span></span><span class=\\\"geo-multi-punct\\\">&#xfeff; / &#xfeff;</span><span class=\\\"geo-nondefault\\\"><span class=\\\"geo-dec\\\" title=\\\"Maps, aerial photos, and other data for this location\\\">48.858222°N 2.294500°E</span><span style=\\\"display:none\\\">&#xfeff; / <span class=\\\"geo\\\">48.858222; 2.294500</span></span></span>]</span>[[Category:Pages using gadget WikiMiniAtlas]]</span>\"}}'/>\n\nConstruction started\n28   January 1887 ; 139 years ago   ( 1887-01-28 )\n\nCompleted\n31   March 1889 ; 137 years ago   ( 1889-03-31 ) [ 1 ]\n\nOpening 15   May 1889 ; 137 years ago   ( 1889-05-15 ) [ 1 ]\n\nOwner City of Paris , France\n\nOperator Société d'Exploitation de la Tour Eiffel (SETE)\n\nHeight\n\nArchitectural 300   m (984   ft) [ 2 ]\n\nTip 330   m (1,083   ft)\n\nTop   floor 276   m (906   ft) [ 2 ]\n\nTechnical   details\n\nFloor   count 4 (3 accessible, 1 residual) [ 3 ]\n\nLifts/elevators 8 [ 4 ]\n\nDesign and construction\n\nArchitect Stephen Sauvestre\n\nStructural engineer\nMaurice Koechlin\nÉmile Nouguier\n\nMain   contractor Compagnie des Etablissements Eiffel\n\nWebsite\n\ntoureiffel.paris\n\nMonument historique\n\nOfficial name\nTour Eiffel\n\nType Classé\n\nDesignated 1964\n\nReferences\n\nI. ^ \"Eiffel Tower\" . Emporis . Archived from the original on 22 April 2016.\n\nUNESCO World Heritage Site\n\nPart of Paris, Banks of the Seine\n\nCriteria Cultural: i, ii, iv\n\nReference 600\n\nInscription 1991 (15th Session )\n\nThe Eiffel Tower ( / ˈ aɪ f əl / ⓘ EYE -fəl ; French : Tour Eiffel [ tuʁ ɛfɛl ] ⓘ ) is a lattice tower on the Champ de Mars in Paris , France . It is named after the engineer Gustave Eiffel , whose company designed and built the tower from 1887 to 1889.\n\nLocally nicknamed \" La dame de fer \" (French for \"Iron Lady\") for its use of wrought iron , it was constructed as the centrepiece of the 1889 World's Fair , and to crown the centennial anniversary of the French Revolution . Although initially criticised by some of France's leading artists and intellectuals for its design, it has since become a global cultural icon of France and one of the most recognisable structures in the world. [ ",
+          "text_scope": "full_text",
+          "text_scope_reason": null
+        },
+        {
+          "url": "http://arxiv.org/abs/2103.00612",
+          "domain": "arxiv.org",
+          "title": "Tall Towers on the Moon",
+          "text_or_snippet": "The lunar South pole likely contains significant amounts of water in the permanently shadowed craters there. Extracting this water for life support at a lunar base or to make rocket fuel would take large amounts of power, of order Gigawatts. A natural place to obtain this power are the \"Peaks of Eternal Light\", that lie a few kilometers away on the crater rims and ridges above the permanently shadowed craters. The amount of solar power that could be captured depends on how tall a tower can be built to support the photovoltaic panels. The low gravity, lack of atmosphere, and quiet seismic environment of the Moon suggests that towers could be built much taller than on Earth. Here we look at the limits to building tall concrete towers on the Moon. We choose concrete as the capital cost of transporting large masses of iron or carbon fiber to the Moon is presently so expensive that profitable",
+          "published_at": "2021-02-28",
+          "source_kind": "academic",
+          "relevance": 0.6515,
+          "full_text": "",
+          "text_scope": "snippet",
+          "text_scope_reason": null
+        },
+        {
+          "url": "https://doi.org/10.3233/atde250271",
+          "domain": "doi.org",
+          "title": "Finite Element Modal Analysis of the Eiffel Tower in Smart Cities Using SolidWorks",
+          "text_or_snippet": "As the first building to use forged steel as the main building material, the Eiffel Tower has high research value in structural engineering. This paper conducted a 1:1 model of the tower to study the craftsmanship and structural texture of its forged steel material and the structure of the base that can withstand such a high weight. Through these three parts of research, three different resonance frequencies were used to determine the swing amplitude of the tower and find out the role of each part of the Eiffel Tower structure in bearing load and the reason why it is so strong. The paper used three meshes with different levels of fineness to analyse it. Other charts were used to visually display data and compared it with other finite element references on the Eiffel Tower to find the commonalities and differences. The research can be extended to natural disasters such as wind and earthqu",
+          "published_at": "2025-06-04",
+          "source_kind": "academic",
+          "relevance": 0.6464,
+          "full_text": "",
+          "text_scope": "snippet",
+          "text_scope_reason": null
+        },
+        {
+          "url": "https://doi.org/10.1061/geosek.0000658",
+          "domain": "doi.org",
+          "title": "Navigating the Ascent",
+          "text_or_snippet": "Limiting global atmospheric temperature increase will require electricity generation from renewable sources such as offshore wind energy development, which has increased exponentially over the past two decades. An offshore wind farm can exceed 100 individual foundations built across seabed areas of 400 km2 (roughly the size of Philadelphia), each supporting a structure nearly the height of the Eiffel Tower (330 m). In the U.S., geodata (i.e., seabed geology and geotechnical properties) are required at every turbine location per the U.S. Bureau of Ocean Energy Management guidelines. To install just one-fifth of the 2,500 GW of renewable energy needed to meet net zero goals by 2050 (a conservative assessment for offshore wind), more than 120,000 km2 of seabed will be needed (roughly the size of Pennsylvania), and over 30,000 turbines built at today’s 15 MW capacity. Site characterization f",
+          "published_at": "2025-10-01",
+          "source_kind": "academic",
+          "relevance": 0.6029,
+          "full_text": "",
+          "text_scope": "snippet",
+          "text_scope_reason": null
         }
       ]
     },
@@ -104,14 +126,17 @@
         "Vitamin C supplementation prevents common cold adults.",
         "Vitamin C"
       ],
-      "captured_at": "2026-10-31T16:29:10+00:00",
+      "captured_at": "2026-10-31T20:43:00+00:00",
       "audit_summary": {
-        "sources_ok": 3,
-        "sources_failed": 0,
+        "sources_ok": 2,
+        "sources_failed": 1,
         "returned": 6,
-        "distinct_domains": 4,
-        "duration_ms": 55,
-        "notes": []
+        "distinct_domains": 2,
+        "duration_ms": 2325,
+        "notes": [
+          "snippet-only evidence: 3 item(s) could not be fetched in full; quotes for those can only be checked against the snippet",
+          "failed sources: wikipedia"
+        ]
       },
       "evidence": [
         {
@@ -121,7 +146,10 @@
           "text_or_snippet": "The common cold had resulted in significant economic and social burden worldwide. The effect of vitamin C on preventing common cold in healthy adults has been investigated extensively, but not that of other micronutrients. Thus, we aim to assess the effects of providing micronutrients singly through oral means, on cold incidence, and/or management (in terms of cold duration and symptom severity) in healthy adults from systematically searched randomized controlled trials. From four electronic databases, 660 identified studies were screened and data were extracted from 20 studies (zinc, 10; vitamin D, 8; and vitamins A and E, 2). The quality of selected studies was assessed using the Cochrane risk of bias tool and certainty in the outcomes was assessed with the Grading of Recommendations Assessment, Development and Evaluation approach. The review found that micronutrients supplementation,",
           "published_at": "2020-01-01",
           "source_kind": "academic",
-          "relevance": 0.9242
+          "relevance": 0.9374,
+          "full_text": "",
+          "text_scope": "snippet",
+          "text_scope_reason": "pubmed.ncbi.nlm.nih.gov returns a landing page, not article text"
         },
         {
           "url": "https://pubmed.ncbi.nlm.nih.gov/9059230/",
@@ -130,25 +158,10 @@
           "text_or_snippet": "Although the role of vitamin C in common cold incidence had been studied extensively, the level of vitamin C intake has not been unequivocally shown to affect the incidence of colds. In the present study the six largest vitamin C supplementation (> or = 1 g/d) studies, including over 5000 episodes in all, have been analysed, and it is shown that common cold incidence is not reduced in the vitamin C-supplemented groups compared with the placebo groups (pooled rate ratio (RR) 0.99; 95% CI 0.93, 1.04). Consequently these six major studies give no evidence that high-dose vitamin C supplementation decreases common cold incidence in ordinary people. Nevertheless, the analysis was continued with the hypothesis that vitamin C intake may affect common cold susceptibility in specific groups of people. It was assumed that the potential effect of supplementation might be most conspicuous in subjects",
           "published_at": "1997-01-01",
           "source_kind": "academic",
-          "relevance": 0.6798
-        },
-        {
-          "url": "https://www.health.harvard.edu/colds-and-flu/can-vitamin-c-prevent-a-cold",
-          "domain": "health.harvard.edu",
-          "title": "Can vitamin C prevent a cold? - Harvard Health",
-          "text_or_snippet": "For the general population, taking daily vitamin C does not reduce the risk of getting a cold . Taking at least 200 milligrams (mg) of vitamin C per day appears to reduce the duration of cold symptoms by an average of 8% in adults and 14% in children.",
-          "published_at": null,
-          "source_kind": "web",
-          "relevance": 0.6461
-        },
-        {
-          "url": "https://doi.org/10.1002/14651858.cd000980.pub4",
-          "domain": "doi.org",
-          "title": "Vitamin C for preventing and treating the common cold",
-          "text_or_snippet": "BACKGROUND: Vitamin C (ascorbic acid) for preventing and treating the common cold has been a subject of controversy for 70 years. OBJECTIVES: To find out whether vitamin C reduces the incidence, the duration or severity of the common cold when used either as a continuous regular supplementation every day or as a therapy at the onset of cold symptoms. SEARCH METHODS: We searched CENTRAL 2012, Issue 11, MEDLINE (1966 to November week 3, 2012), EMBASE (1990 to November 2012), CINAHL (January 2010 to November 2012), LILACS (January 2010 to November 2012) and Web of Science (January 2010 to November 2012). We also searched the U.S. National Institutes of Health trials register and WHO ICTRP on 29 November 2012. SELECTION CRITERIA: We excluded trials which used less than 0.2 g per day of vitamin C and trials without a placebo comparison. We restricted our review to placebo-controlled trials. D",
-          "published_at": "2013-01-29",
-          "source_kind": "academic",
-          "relevance": 0.523
+          "relevance": 0.6592,
+          "full_text": "",
+          "text_scope": "snippet",
+          "text_scope_reason": "pubmed.ncbi.nlm.nih.gov returns a landing page, not article text"
         },
         {
           "url": "https://doi.org/10.1371/journal.pmed.0020168",
@@ -157,16 +170,46 @@
           "text_or_snippet": "Whether vitamin C has an effect on the common cold has been a subject of controversy for at least 60 years. What does the evidence show?",
           "published_at": "2005-06-22",
           "source_kind": "academic",
-          "relevance": 0.5161
+          "relevance": 0.5511,
+          "full_text": "",
+          "text_scope": "snippet",
+          "text_scope_reason": "doi.org returns a landing page, not article text"
         },
         {
-          "url": "https://en.wikipedia.org/wiki/Common_cold",
-          "domain": "en.wikipedia.org",
-          "title": "Common cold",
-          "text_or_snippet": "The common cold, or simply a cold, is a viral infectious disease of the upper respiratory tract that primarily affects the respiratory mucosa of the nose, throat, sinuses, and larynx. Signs and symptoms may appear in as little as two days after exposure to the virus. These may include coughing, sore throat, runny nose, sneezing, headache, fatigue, and fever. People usually recover in seven to ten days, but some symptoms may last up to three weeks. Occasionally, those with other health problems may develop pneumonia. When general symptoms are systemic and the disease is severe, the term \"flu-like\" or \"influenza-like illness\" can be used instead.",
-          "published_at": null,
-          "source_kind": "encyclopedia",
-          "relevance": 0.3993
+          "url": "https://doi.org/10.1002/14651858.cd000980.pub4",
+          "domain": "doi.org",
+          "title": "Vitamin C for preventing and treating the common cold",
+          "text_or_snippet": "BACKGROUND: Vitamin C (ascorbic acid) for preventing and treating the common cold has been a subject of controversy for 70 years. OBJECTIVES: To find out whether vitamin C reduces the incidence, the duration or severity of the common cold when used either as a continuous regular supplementation every day or as a therapy at the onset of cold symptoms. SEARCH METHODS: We searched CENTRAL 2012, Issue 11, MEDLINE (1966 to November week 3, 2012), EMBASE (1990 to November 2012), CINAHL (January 2010 to November 2012), LILACS (January 2010 to November 2012) and Web of Science (January 2010 to November 2012). We also searched the U.S. National Institutes of Health trials register and WHO ICTRP on 29 November 2012. SELECTION CRITERIA: We excluded trials which used less than 0.2 g per day of vitamin C and trials without a placebo comparison. We restricted our review to placebo-controlled trials. D",
+          "published_at": "2013-01-29",
+          "source_kind": "academic",
+          "relevance": 0.5246,
+          "full_text": "",
+          "text_scope": "snippet",
+          "text_scope_reason": null
+        },
+        {
+          "url": "https://doi.org/10.1002/14651858.cd000980.pub2",
+          "domain": "doi.org",
+          "title": "Vitamin C for preventing and treating the common cold",
+          "text_or_snippet": "BACKGROUND: The role of oral vitamin C (ascorbic acid) in the prevention and treatment of the common cold has been a subject of controversy for at least sixty years. Public interest in the topic continues to be high and vitamin C continues to be widely sold and used as a preventive and therapeutic agent for this common ailment. OBJECTIVES: To discover whether oral vitamin C in doses of 200 mg or more daily, reduces the incidence, duration or severity of the common cold when used either as continuous prophylaxis or after the onset of cold symptoms. SEARCH STRATEGY: This updated review added to earlier searches, a full search of the following electronic databases: the Central Register of Controlled Trials (CENTRAL) (The Cochrane Library Issue 2, 2004); MEDLINE (January 1966 to June 2004); and EMBASE (1990 to June 2004). SELECTION CRITERIA: Papers were excluded if a dose less than 200 mg da",
+          "published_at": "2004-10-14",
+          "source_kind": "academic",
+          "relevance": 0.4798,
+          "full_text": "",
+          "text_scope": "snippet",
+          "text_scope_reason": null
+        },
+        {
+          "url": "https://doi.org/10.3390/nu9040339",
+          "domain": "doi.org",
+          "title": "Vitamin C and Infections",
+          "text_or_snippet": "In the early literature, vitamin C deficiency was associated with pneumonia. After its identification, a number of studies investigated the effects of vitamin C on diverse infections. A total of 148 animal studies indicated that vitamin C may alleviate or prevent infections caused by bacteria, viruses, and protozoa. The most extensively studied human infection is the common cold. Vitamin C administration does not decrease the average incidence of colds in the general population, yet it halved the number of colds in physically active people. Regularly administered vitamin C has shortened the duration of colds, indicating a biological effect. However, the role of vitamin C in common cold treatment is unclear. Two controlled trials found a statistically significant dose-response, for the duration of common cold symptoms, with up to 6-8 g/day of vitamin C. Thus, the negative findings of some",
+          "published_at": "2017-03-29",
+          "source_kind": "academic",
+          "relevance": 0.4766,
+          "full_text": "",
+          "text_scope": "snippet",
+          "text_scope_reason": null
         }
       ]
     },
@@ -177,34 +220,18 @@
         "Great Wall China visible space naked eye.",
         "Great Wall China"
       ],
-      "captured_at": "2026-10-31T16:29:10+00:00",
+      "captured_at": "2026-10-31T20:43:01+00:00",
       "audit_summary": {
-        "sources_ok": 3,
+        "sources_ok": 2,
         "sources_failed": 0,
         "returned": 6,
-        "distinct_domains": 5,
-        "duration_ms": 31,
-        "notes": []
+        "distinct_domains": 3,
+        "duration_ms": 1336,
+        "notes": [
+          "snippet-only evidence: 2 item(s) could not be fetched in full; quotes for those can only be checked against the snippet"
+        ]
       },
       "evidence": [
-        {
-          "url": "https://www.halleyspace.com/great-wall-of-china-visible-from-space-myth/",
-          "domain": "halleyspace.com",
-          "title": "No, the Great Wall of China is not visible from space",
-          "text_or_snippet": "The claim that the Great Wall of China is visible from space , or even from the Moon, with the naked eye is false. At low Earth orbit the wall is about ten times narrower than the human eye can resolve, and its stone blends into the surrounding terrain.",
-          "published_at": null,
-          "source_kind": "web",
-          "relevance": 1.0
-        },
-        {
-          "url": "https://checkthisfact.com/factchecks/the-great-wall-of-china-is-visible-from-space",
-          "domain": "checkthisfact.com",
-          "title": "Great Wall of China visible from space - false",
-          "text_or_snippet": "Summary The Great Wall of China cannot be seen with the naked eye from space ; astronauts and NASA have confirmed it is not visible from low Earth orbit except under exceptional conditions, and it is certainly not visible from the Moon. The claim is a persistent myth.",
-          "published_at": null,
-          "source_kind": "web",
-          "relevance": 1.0
-        },
         {
           "url": "https://doi.org/10.5281/zenodo.19489855",
           "domain": "doi.org",
@@ -212,25 +239,22 @@
           "text_or_snippet": "Automated fact-verification of the claim: \"The Great Wall of China is the only man-made object visible from space with the naked eye.\" Verdict: DISPROVED Key Findings Both sub-claims are false. The Great Wall of China is NOT visible from space with the naked eye, AND it is NOT the only man-made object that could be — many others (highways, dams, cities) are routinely visible from low Earth orbit. NASA officially states the wall is \"difficult or impossible to see from Earth orbit without high-powered lenses\" (B1). Former NASA astronaut Jeffrey Hoffman confirms: \"I have spent a lot of time looking at the Earth from space, including numerous flights over China, and I never saw the wall\" (B2). Multiple man-made structures — highways, dams, and cities — are visible from space without magnification (B4), directly contradicting the \"only\" claim. Files proof.py — Re-runnable Python verification",
           "published_at": "2026-04-10",
           "source_kind": "academic",
-          "relevance": 1.0
+          "relevance": 1.0,
+          "full_text": "",
+          "text_scope": "snippet",
+          "text_scope_reason": "doi.org returns a landing page, not article text"
         },
         {
-          "url": "https://checkthisfact.com/factchecks/is-the-great-wall-of-china-visible-from-space",
-          "domain": "checkthisfact.com",
-          "title": "Is the Great Wall of China visible from space?",
-          "text_or_snippet": "Summary The Great Wall of China cannot be seen with the naked eye from space ; it is extremely difficult to discern even from low‑Earth orbit and is not visible from the Moon. Astronauts confirm that only under very favorable conditions might a tiny segment be spotted, but generally it is not observable.",
-          "published_at": null,
-          "source_kind": "web",
-          "relevance": 0.9817
-        },
-        {
-          "url": "https://factguard.org/fact-check/great-wall-of-china-visible-from-space/",
-          "domain": "factguard.org",
-          "title": "Is the Great Wall of China visible from space with the naked eye?",
-          "text_or_snippet": "What the evidence shows The Great Wall is generally not visible to the unaided human eye from low Earth orbit, and certainly not from the Moon. Although it is long, it is only a few meters wide and blends in color with the surrounding land. Astronauts, including China's first astronaut, have reported being unable to see it without aid.",
-          "published_at": null,
-          "source_kind": "web",
-          "relevance": 0.9515
+          "url": "https://doi.org/10.1080/10824000609480619",
+          "domain": "doi.org",
+          "title": "The Great Wall of China can be Seen from Space",
+          "text_or_snippet": "Whether the Great Wall of China is visible from space by naked eye has become a space-based myth. Conflicting stories told by astronauts have been reported in various media. Several scholars also tried to give a much needed scientific answer to the question through their own research. Recently, Chinese scholars Dai et al. published their analysis based on visual acuity of point objects and concluded that astronauts cannot see the Great Wall of China from space. However, our analysis based on the human's visual acuity of linear objects concludes that the Great Wall can be seen at the altitude up to about 500 km. Some environment conditions on the ground may dampen the chance of a successful observation.",
+          "published_at": "2006-12-01",
+          "source_kind": "academic",
+          "relevance": 0.8569,
+          "full_text": "",
+          "text_scope": "snippet",
+          "text_scope_reason": "doi.org returns a landing page, not article text"
         },
         {
           "url": "https://en.wikipedia.org/wiki/Comet_NEOWISE",
@@ -239,7 +263,46 @@
           "text_or_snippet": "C/2020 F3 (NEOWISE) or Comet NEOWISE is a long period comet with a near-parabolic orbit discovered on March 27, 2020, by astronomers during the NEOWISE mission of the Wide-field Infrared Survey Explorer (WISE) space telescope. At that time, it was an 18th-magnitude object, located 2.0 AU (300 million km; 190 million mi) away from the Sun and 1.7 AU (250 million km; 160 million mi) away from Earth. NEOWISE is known for being the brightest comet in the northern hemisphere since Comet Hale–Bopp in 1997. It was widely photographed by professional and amateur observers and was even spotted by people living near city centers and areas with light pollution. While it was too close to the Sun to be observed at perihelion, it emerged from perihelion around magnitude 0.5 to 1, making it bright enough to be visible to the naked eye. Under dark skies, it could be seen with the naked eye and remained visible to the naked eye throughout July 2020.",
           "published_at": null,
           "source_kind": "encyclopedia",
-          "relevance": 0.6916
+          "relevance": 0.7409,
+          "full_text": "C/2020 F3 (NEOWISE) or Comet NEOWISE is a long period comet with a near-parabolic orbit discovered on March 27, 2020, by astronomers during the NEOWISE mission of the Wide-field Infrared Survey Explorer (WISE) space telescope. At that time, it was an 18th-magnitude object, located 2.0 AU (300 million km; 190 million mi) away from the Sun and 1.7 AU (250 million km; 160 million mi) away from Earth.\nNEOWISE is known for being the brightest comet in the northern hemisphere since Comet Hale–Bopp in 1997. It was widely photographed by professional and amateur observers and was even spotted by people living near city centers and areas with light pollution. While it was too close to the Sun to be observed at perihelion, it emerged from perihelion around magnitude 0.5 to 1, making it bright enough to be visible to the naked eye. Under dark skies, it could be seen with the naked eye and remained visible to the naked eye throughout July 2020. By July 30, the comet was about magnitude 5, when binoculars were required near urban areas to locate the comet.\nFor observers in the Northern Hemisphere, the comet could be seen on the northwestern horizon, below the Big Dipper. North of 45 degrees north, the comet was visible all night in mid-July 2020. On July 30, Comet NEOWISE entered the constellation of Coma Berenices, below the bright star Arcturus.\nNEOWISE was retroactively dubbed the Great Comet of 2020.\n\n\n== History and observations ==\n\nThe object was discovered by a team using the WISE space telescope under the NEOWISE program on March 27, 2020. It was classified as a comet on March 31 and named after NEOWISE on April 1. It has the systematic designation C/2020 F3, indicating a non-periodic comet which was the third discovered in the second half of March 2020.\nComet NEOWISE made its closest approach to the Sun (perihelion) on July 3, 2020, at a distance of 0.29 AU (43 million km; 27 million mi). This passage through the planetary region increases the comet's orbital period from about 4500 years to about 6800 years. Its closest approach to Earth occurred on July 23, 2020, 01:09 UTC, at a distance of 0.69 AU (103 million km; 64 million mi) while located in the constellation of Ursa Major.\nIn early July, the comet could be seen in the morning sky just above the north-eastern horizon and below Capella. Seen from Earth, the comet was less than 20 degrees from the Sun between June 11–July 9, 2020. By June 10, 2020 as the comet was being lost to the glare of the Sun, it was apparent magnitude 7.0, when it was 0.7 AU (100 million km; 65 million mi) away from Sun and 1.6 AU (240 million km; 150 million mi) away from Earth. When the comet entered the field of view of the SOHO spacecraft's LASCO C3 instrument on June 22, 2020, the comet had brightened to about magnitude 3.0, when it was 0.4 AU (60 million km; 37 million mi) away from the Sun and 1.4 AU (210 million km; 130 million mi) away from Earth.\nBy early July, Comet NEOWISE had brightened to magnitude 1.0, far exceeding the brightness attained by previous comets that year, C/2020 F8 (SWAN), and C/2019 Y4 (ATLAS). By July, it also had developed a second tail. The first tail was blue and made of gas and ions. There was also a red separation in the tail caused by high amounts of sodium. The second twin tail was a golden color and was made of dust, like the tail of Comet Hale–Bopp. The comet was brighter than C/2011 L4 (PanSTARRS), but not as bright as Hale–Bopp was in 1997. After perihelion, the comet began to fade, dropping to magnitude 2.0 in mid-July. Its nucleus activity subdued after mid-July, and its green coma was clearly visible after that.\nOn July 13, 2020, a sodium tail was confirmed by the Planetary Science Institute's Input/Output facility. Sodium tails have only been observed in very bright comets such as Hale–Bopp and C/2012 S1 (ISON).\nFrom the infrared signature, the diameter of the comet nucleus is estimated to be approximately 5 km (3.1 mi). The nucleus is similar in size to Comet Hyakutake and many short-period comets such as 2P/Encke, 7P/Pons–Winnecke, 8P/Tuttle, 14P/Wolf, and 19P/Borrelly. By July 5, NASA's Parker Solar Probe had captured an image of the comet, from which astronomers also estimated the diameter of the comet nucleus at approximately 5 km (3.1 mi) as well. Later in July 2020, other observations were also reported, including those related to coma morphology, and spectrographic emissions. On 31 July 2020, strong detection of OH 18-cm emission was observed in radio spectroscopic studies at the Arecibo Observatory, in Puerto Rico. On August 14, 2020, the rotation period of the comet was reported to be \"7.58±0.03 hr\".\nAfter its perihelion and closest approach to Earth, a number of authors have suggested considering NEOWISE as a great comet. Others have argued that it lacked the brightness and visible tail to qualify. Retroactively, in the years that followed, NEOWISE is commonly remembered as a great comet.\n\n\n== Trajectory ==\nComet NEOWISE's retrograde orbit crossed to the north of the plane of the ecliptic, to which it is inclined at approximately 129 degrees, on June 29, 2020, 01:47 UTC. It made its closest approach to the Sun (perihelion) on July 3, 2020, at a distance of 0.29 AU (43 million km; 27 million mi). This passage increases the comet's orbital period from about 4400 years to about 6700 years. On July 18, the comet peaked at a northern declination of +48 and was circumpolar down to latitude 42N. Its closest approach to Earth occurred on July 23, 2020, 01:09 UTC, at a distance of 0.69 AU (103 million km; 64 million mi) while located in the constellation of Ursa Major.\nThe comet's orbital characteristics suggest it originated from the Oort cloud. Its high orbital eccentricity of 0.99921 confirms its path is a nearly parabolic trajectory, typical of long-period comets making one of their first passages into the inner Solar System. The orbital inclination of 129 degrees classifies it as a retrograde comet, meaning it o",
+          "text_scope": "full_text",
+          "text_scope_reason": null
+        },
+        {
+          "url": "https://doi.org/10.4324/9781315786223-11",
+          "domain": "doi.org",
+          "title": "The Healing of the Frightened Child",
+          "text_or_snippet": "When humankind began walking in space, it became obvious from that perspective that no boundaries mark the borders of countries except for bodies of water and geographical landmarks. The only human-made boundary visible to the naked eye from space is the Great Wall of China. Consequently, most human-made boundaries are invisible, yet those are the boundaries that separate territories and nations. Likewise, we construct other boundaries to separate ourselves from others—these too are human-made and maintained. As with psychological games, the purpose of such walls—such boundaries— is to avoid closeness, involvement, and intimacy.",
+          "published_at": "2014-02-25",
+          "source_kind": "academic",
+          "relevance": 0.7372,
+          "full_text": "",
+          "text_scope": "snippet",
+          "text_scope_reason": null
+        },
+        {
+          "url": "https://doi.org/10.13189/sa.2017.051209",
+          "domain": "doi.org",
+          "title": "Possible Mesoamerican Naked-eye Observation of Sunspots - VI: Evidence from Yaxchilan Lintel 48",
+          "text_or_snippet": "Many pre-telescopic naked-eye observations of large sunspot displays exist in the historical records. The most famous of these observations come from China, Japan, Korea, and Greece, but other cultures have made them as well. Pictorial evidence on dated monuments suggests that naked-eye sunspot displays may have been recorded in Mesoamerica as well. In this regard, Yaxchilan Lintel 48 is of particular interest. After a century long gap in naked-eye sunspot observations from Asia, an outstanding cluster of events began in 499 AD and terminated on April 7, 513. Within 5 years of this latter date, Joy b'alam (Knot-eye Jaguar I) was captured and, following an interregnum, K'inich Tatb'u (Skull II; Knot-eye's brother) ascended the throne in 526. In retrospect, Mayan priests might have associated the sunspot displays with the change in political power, and recorded their observations on histor",
+          "published_at": "2017-12-01",
+          "source_kind": "academic",
+          "relevance": 0.7031,
+          "full_text": "",
+          "text_scope": "snippet",
+          "text_scope_reason": null
+        },
+        {
+          "url": "https://pubmed.ncbi.nlm.nih.gov/42254958/",
+          "domain": "pubmed.ncbi.nlm.nih.gov",
+          "title": "Biocrusts: Guardians of the Great Wall of China.",
+          "text_or_snippet": "Biocrusts: Guardians of the Great Wall of China.",
+          "published_at": "2026-01-01",
+          "source_kind": "academic",
+          "relevance": 0.4608,
+          "full_text": "",
+          "text_scope": "snippet",
+          "text_scope_reason": null
         }
       ]
     },
@@ -250,13 +313,13 @@
         "VerifyAI team invented quantum banana protocol 2026.",
         "VerifyAI 2026."
       ],
-      "captured_at": "2026-10-31T16:29:10+00:00",
+      "captured_at": "2026-10-31T20:43:02+00:00",
       "audit_summary": {
         "sources_ok": 1,
         "sources_failed": 0,
         "returned": 0,
         "distinct_domains": 0,
-        "duration_ms": 16,
+        "duration_ms": 782,
         "notes": []
       },
       "evidence": []

@@ -864,35 +864,48 @@ def test_slow_source_is_abandoned_at_the_deadline():
 
 
 def test_parallel_claims_preserve_order_and_cut_wall_clock():
+    """Claims must run concurrently and keep input order.
+
+    Deliberately compares parallel against serial on the *same* machine rather
+    than asserting an absolute wall clock: Windows thread-startup overhead made an
+    absolute threshold flaky (observed 1.85 s for work that was genuinely parallel).
+    """
     import time as _t
 
     from s2_service import retrieve_for_claims
 
     class PerCallAdapter(SourceAdapter):
-        """Returns claim-specific evidence so ordering can be verified."""
-
         name = "echo"
         kind = "web"
 
         def search(self, query, *, limit, cache=None):
-            _t.sleep(0.3)  # pretend each claim needs network time
-            return [r(f"About {query}", f"https://echo.example/{abs(hash(query))}",
-                      f"{query} explained in detail", "web")]
+            _t.sleep(0.4)
+            return [
+                r(f"About {query}", f"https://echo.example/{abs(hash(query))}",
+                  f"{query} explained in detail", "web")
+            ]
 
     engine = make_engine([PerCallAdapter()])
     claims = [{"id": f"c{i}", "text": f"unique claim number {i}"} for i in range(4)]
+
+    # warm up thread pools so startup cost is not measured
+    retrieve_for_claims(claims[:1], engine=engine, parallel_claims=1)
 
     started = _t.perf_counter()
     bundles = retrieve_for_claims(claims, engine=engine, parallel_claims=4)
     parallel_elapsed = _t.perf_counter() - started
 
-    assert [b["claim"]["id"] for b in bundles] == ["c0", "c1", "c2", "c3"]
-    assert parallel_elapsed < 1.0, f"claims did not run concurrently ({parallel_elapsed:.2f}s)"
-
     started = _t.perf_counter()
     retrieve_for_claims(claims, engine=engine, parallel_claims=1)
     serial_elapsed = _t.perf_counter() - started
-    assert parallel_elapsed < serial_elapsed
+
+    assert [b["claim"]["id"] for b in bundles] == ["c0", "c1", "c2", "c3"]
+    assert serial_elapsed > 0.1, "serial baseline too fast to compare against"
+    ratio = parallel_elapsed / serial_elapsed
+    assert ratio < 0.75, (
+        f"claims did not run concurrently: parallel={parallel_elapsed:.2f}s "
+        f"serial={serial_elapsed:.2f}s ratio={ratio:.2f}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -909,7 +922,7 @@ def test_null_cache_never_stores_or_serves():
 
 
 def test_use_cache_false_forces_a_real_request():
-    """A source that counts calls proves the engine bypasses the cache."""
+    """use_cache=False must bypass the cache so a measurement reflects the network."""
     calls = {"n": 0}
 
     class CountingAdapter(SourceAdapter):
@@ -925,24 +938,331 @@ def test_use_cache_false_forces_a_real_request():
     )
     engine.search_claim("vitamin c common cold")
     engine.search_claim("vitamin c common cold")
-    # one query per claim (short claims produce no entity variant), two claims
     assert calls["n"] == 2, "with caching off, every claim hits the adapter again"
 
-    counted = {"n": 0}
 
-    class CountingAdapter2(SourceAdapter):
-        name = "counter2"
+# ---------------------------------------------------------------------------
+# S2 -> S3 handoff: real S1 Claim objects, entities, claim_type mapping
+# ---------------------------------------------------------------------------
+def _s1_claim():
+    sys.path.insert(0, str(Path(__file__).resolve().parent / "vendor"))
+    import s1_schemas_snapshot as s1
+
+    return s1.Claim(
+        id="claim_001",
+        text="India is the world's largest solar energy producer",
+        entities=["India"],
+        claim_type="factual",
+    )
+
+
+def test_aretrieve_accepts_real_s1_claim_objects():
+    """S1's Claim is pydantic with extra='forbid' and exactly 4 fields."""
+    import asyncio
+
+    from s2_service import aretrieve_for_claims
+
+    claim = _s1_claim()
+    assert claim.model_fields_set == {"id", "text", "entities", "claim_type"}
+
+    bundles = asyncio.run(aretrieve_for_claims([claim], engine=_offline_service_engine()))
+    assert len(bundles) == 1
+    payload = bundles[0]["claim"]
+
+    assert payload["type"] == "factual"          # claim_type -> type, nothing lost
+    assert payload["id"] == "claim_001"
+    assert payload["text"] == claim.text
+    assert payload["article_quote"] is None      # S1 does not emit one
+    assert payload["time_sensitive"] is False    # S1 does not emit one
+
+
+def test_s1_entities_enrich_the_query_without_changing_retrieval_contract():
+    from s2_service import retrieve_for_claims
+
+    class RecordingAdapter(SourceAdapter):
+        name = "rec"
         kind = "web"
 
-        def search(self, query, *, limit, cache=None):
-            counted["n"] += 1
-            return []
+        def __init__(self):
+            self.queries = []
 
-    engine2 = RetrievalEngine(
-        config=RetrievalConfig(use_cache=False), adapters=[CountingAdapter2()]
+        def search(self, query, *, limit, cache=None):
+            self.queries.append(query)
+            return [
+                r("Solar in India", "https://en.wikipedia.org/wiki/Solar_power_in_India",
+                  "India solar capacity has grown rapidly", "web")
+            ]
+
+    adapter = RecordingAdapter()
+    engine = make_engine([adapter])
+    bundles = retrieve_for_claims([_s1_claim()], engine=engine, parallel_claims=1)
+
+    assert any("India" in q for q in adapter.queries), "entity must reach the query"
+    assert bundles[0]["claim"]["type"] == "factual"
+    assert all(e["claim_id"] == "claim_001" for e in bundles[0]["evidence"])
+
+
+def test_expanded_s1_claim_still_validates_against_lead_models():
+    models = _lead_models()
+    from contract_adapter import to_claim_bundle
+    from contracts import Evidence
+
+    claim = _s1_claim()
+    bundle = to_claim_bundle(
+        claim,
+        evidence=[
+            Evidence(
+                url="https://en.wikipedia.org/wiki/Solar_power_in_India",
+                domain="en.wikipedia.org",
+                title="Solar power in India",
+                text_or_snippet="India has one of the world's largest solar programmes.",
+                source_kind="encyclopedia",
+                relevance=0.72,
+            )
+        ],
     )
-    engine2.search_claim("a claim")
-    assert counted["n"] >= 1
+    parsed = models.ClaimEvidenceBundle(
+        **{k: v for k, v in bundle.items() if k != "quote_guard"}
+    )
+    assert parsed.claim.type == "factual"
+    assert parsed.evidence[0].claim_id == "claim_001"
+
+
+# ---------------------------------------------------------------------------
+# Full text for the quote-verification guard
+# ---------------------------------------------------------------------------
+def test_html_to_text_strips_boilerplate_and_keeps_paragraphs():
+    from fulltext import html_to_text
+
+    markup = """
+    <html><head><style>.a{color:red}</style><script>var x=1;</script></head>
+    <body><nav>menu menu</nav>
+      <article><h1>Solar in India</h1>
+        <p>India added a record amount of solar capacity.</p>
+        <p>Coal still supplies most of the country&#39;s power.</p>
+      </article>
+      <footer>copyright</footer></body></html>
+    """
+    text = html_to_text(markup)
+    assert "India added a record amount" in text
+    assert "var x=1" not in text
+    assert "menu menu" not in text
+    assert "copyright" not in text
+    assert "country's power" in text
+
+
+def test_wikipedia_title_detection():
+    from fulltext import wikipedia_title
+
+    assert (
+        wikipedia_title("https://en.wikipedia.org/wiki/Solar_power_in_India")
+        == "Solar power in India"
+    )
+    assert wikipedia_title("https://example.com/article") is None
+
+
+def test_full_text_marks_scope_and_never_pretends(monkeypatch):
+    """A fetchable page -> scope full_text; a failed one -> snippet + reason."""
+    import fulltext
+
+    def fake_fetch(url, *, timeout=5.0, max_chars=6000, cache=None):
+        if "wikipedia" in url:
+            return fulltext.PageText(
+                url=url, status="full_text",
+                text="India added a record amount of solar capacity in 2024. " * 20,
+                chars=1100,
+            )
+        return fulltext.PageText(url=url, status="snippet", reason="HTTP 403")
+
+    monkeypatch.setattr(fulltext, "fetch_page_text", fake_fetch)
+
+    sources = [
+        r("Solar power in India", "https://en.wikipedia.org/wiki/Solar_power_in_India",
+          "India solar capacity record", "encyclopedia"),
+        r("Solar policy", "https://paywalled.example/solar", "India solar policy overview", "web"),
+    ]
+    engine = RetrievalEngine(
+        config=RetrievalConfig(top_k=4, fetch_full_text=2),
+        adapters=[StubAdapter("s", "web", sources)],
+    )
+    result = engine.search_claim("India solar capacity record")
+
+    by_domain = {e.domain: e for e in result.evidence}
+    wiki = by_domain["en.wikipedia.org"]
+    other = by_domain["paywalled.example"]
+    assert wiki.text_scope == "full_text"
+    assert len(wiki.full_text) > 200
+    assert other.text_scope == "snippet"
+    assert other.full_text == ""
+    assert "403" in (other.text_scope_reason or "")
+    assert result.audit.full_text_fetched == 1
+    assert result.audit.full_text_failed >= 1
+    assert any("snippet-only" in n for n in result.audit.notes)
+
+
+def test_full_text_disabled_in_offline_mode():
+    engine = RetrievalEngine(config=RetrievalConfig(offline=True, fetch_full_text=3))
+    result = engine.search_claim("vitamin C prevents the common cold")
+    assert result.evidence
+    assert all(e.text_scope == "snippet" and e.full_text == "" for e in result.evidence)
+
+
+def test_quote_guard_reports_what_s3_may_claim():
+    from contract_adapter import quote_guard_map
+    from contracts import Evidence
+
+    with_text = Evidence(
+        url="https://a.example/1", domain="a.example", text_or_snippet="short",
+        full_text="full page text " * 30, text_scope="full_text",
+    )
+    snippet_only = Evidence(
+        url="https://b.example/2", domain="b.example", text_or_snippet="short",
+        text_scope="snippet", text_scope_reason="HTTP 403",
+    )
+    guard = quote_guard_map([with_text, snippet_only])
+    assert sorted(guard.values()) == ["full_text", "snippet"]
+
+
+def test_quote_check_only_passes_against_the_text_we_actually_have():
+    from s2_service import quote_support
+
+    item = {
+        "id": "ev_1",
+        "snippet": "India added a record amount of solar capacity.",
+        "full_text": "",
+    }
+    in_snippet, scope_a = quote_support(item, "added a record amount of solar capacity")
+    assert in_snippet and scope_a == "snippet"
+
+    not_present, scope_b = quote_support(item, "India will ban coal by 2030")
+    assert not not_present and scope_b == "snippet"
+
+    item_with_page = dict(item, full_text="Intro. India will ban coal by 2030, the minister said. " * 5)
+    found, scope_c = quote_support(item_with_page, "India will ban coal by 2030")
+    assert found and scope_c == "full_text"
+
+
+def test_apply_analysis_verifies_against_full_text_and_refuses_without_it():
+    from s2_service import apply_analysis
+
+    base = [
+        {
+            "claim": {"id": "c1", "text": "t", "type": "factual",
+                      "article_quote": None, "time_sensitive": False},
+            "evidence": [
+                {"id": "ev_page", "claim_id": "c1", "url": "https://a.example/1",
+                 "domain": "a.example", "snippet": "Short intro sentence.",
+                 "full_text": "Short intro sentence. The minister confirmed the ban by 2030. " * 4,
+                 "stance": "NEUTRAL", "quote": "", "quote_verified": False, "rationale": ""},
+                {"id": "ev_snip", "claim_id": "c1", "url": "https://b.example/2",
+                 "domain": "b.example", "snippet": "Short intro sentence.", "full_text": "",
+                 "stance": "NEUTRAL", "quote": "", "quote_verified": False, "rationale": ""},
+            ],
+        }
+    ]
+    analyses = [
+        {"evidence_id": "ev_page", "stance": "SUPPORTS", "quote_verified": True,
+         "quote": "The minister confirmed the ban by 2030."},
+        {"evidence_id": "ev_snip", "stance": "SUPPORTS", "quote_verified": True,
+         "quote": "The minister confirmed the ban by 2030."},
+    ]
+    merged = apply_analysis(
+        [dict(b, evidence=[dict(e) for e in b["evidence"]]) for b in base], analyses
+    )
+    items = {e["id"]: e for e in merged[0]["evidence"]}
+
+    assert items["ev_page"]["quote_verified"] is True      # present in full text
+    assert items["ev_snip"]["quote_verified"] is False     # not checkable from snippet
+    assert items["ev_snip"]["quote"] == ""
+
+
+# ---------------------------------------------------------------------------
+# S2 stays retrieval-only: no stance, no verdict
+# ---------------------------------------------------------------------------
+def test_s2_output_contains_no_stance_or_verdict_decisions():
+    from s2_service import retrieve_for_claims
+
+    bundles = retrieve_for_claims(
+        [{"id": "c1", "text": "vitamin C prevents the common cold"}],
+        engine=_offline_service_engine(),
+    )
+    bundle = bundles[0]
+
+    assert "verdict" not in bundle
+    assert "evidence_strength" not in bundle
+    assert "stance_score" not in bundle
+
+    for item in bundle["evidence"]:
+        assert item["stance"] == "NEUTRAL", "S2 must not assign stance"
+        assert item["quote_verified"] is False, "S2 must not verify quotes"
+        assert item["quote"] == ""
+        assert item["rationale"] == ""
+
+
+def test_apply_analysis_never_invents_a_stance_it_was_not_given():
+    from s2_service import apply_analysis
+
+    bundle = {
+        "claim": {"id": "c1", "text": "t", "type": "factual",
+                  "article_quote": None, "time_sensitive": False},
+        "evidence": [{"id": "ev_1", "claim_id": "c1", "url": "https://a.example/1",
+                      "domain": "a.example", "snippet": "text here", "full_text": "",
+                      "stance": "NEUTRAL", "quote": "", "quote_verified": False, "rationale": ""}],
+    }
+    merged = apply_analysis([bundle], [])
+    assert merged[0]["evidence"][0]["stance"] == "NEUTRAL"
+
+    merged2 = apply_analysis(
+        [json.loads(json.dumps(bundle))],
+        [{"evidence_id": "ev_1", "stance": "", "quote": ""}],
+    )
+    assert merged2[0]["evidence"][0]["stance"] == "NEUTRAL"
+
+
+# ---------------------------------------------------------------------------
+# S3 seam checker (the tool Ikjot runs before the freeze)
+# ---------------------------------------------------------------------------
+def test_check_s3_contract_runs_offline_and_reports_no_analyzer(tmp_path, monkeypatch):
+    import importlib.util
+
+    path = Path(__file__).resolve().parents[1] / "scripts" / "check_s3_contract.py"
+    spec = importlib.util.spec_from_file_location("check_s3", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    assert hasattr(module, "main")
+    # offline corpus + no analyzer: must exit 0 and never raise
+    assert module.main(["--offline", "--top-k", "3"]) == 0
+
+
+def test_check_s3_contract_flags_a_fabricating_analyzer(tmp_path, monkeypatch, capsys):
+    """An analyzer whose quote is not in the retrieved text must be a BLOCKER."""
+    import importlib.util
+
+    path = Path(__file__).resolve().parents[1] / "scripts" / "check_s3_contract.py"
+    spec = importlib.util.spec_from_file_location("check_s3b", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    # build a fake analyzer module on disk and import it by name
+    fake = tmp_path / "fake_s3.py"
+    fake.write_text(
+        "def analyze(claims, bundles):\n"
+        "    out = []\n"
+        "    for b in bundles:\n"
+        "        for item in b['evidence'][:1]:\n"
+        "            out.append({'evidence_id': item['id'], 'stance': 'REFUTES',\n"
+        "                        'quote': 'THIS SENTENCE IS NOT IN THE SOURCE',\n"
+        "                        'quote_verified': True})\n"
+        "    return out\n",
+        encoding="utf-8",
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    code = module.main(["--offline", "--top-k", "3", "--analyze", "fake_s3:analyze"])
+    captured = capsys.readouterr().out
+    assert code == 1, "a fabricated quote must produce a non-zero exit"
+    assert "not found in retrieved" in captured
 
 
 # ---------------------------------------------------------------------------

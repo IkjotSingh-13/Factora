@@ -125,6 +125,14 @@ class RetrievalConfig:
     offline: bool = False               # only local corpus (demo safety net)
     replay_snapshot: Optional[str] = None  # serve captured evidence only (offline demo backup)
     use_cache: bool = True              # False forces real requests (honest measurement)
+    # --- full text for quote verification (S2 -> S3 handoff) -----------------
+    # How many top-ranked results to fetch page text for. 0 disables fetching.
+    # Without this, S3 can only verify quotes against a snippet, and must not
+    # claim it verified them in the source.
+    fetch_full_text: int = 3
+    fulltext_deadline_s: float = 4.0
+    fulltext_max_chars: int = 6000
+    fulltext_timeout_s: float = 5.0
     mock: bool = False                  # add local corpus to the real sources
     use_llm_query_rewrite: bool = False  # optional, off by default
     extra_queries: int = 0              # how many rewrites to add (if enabled)
@@ -141,6 +149,7 @@ class RetrievalConfig:
             "relevance_scale": self.relevance_scale,
             "total_deadline_s": self.total_deadline_s,
             "use_cache": self.use_cache,
+            "fetch_full_text": self.fetch_full_text,
             "offline": self.offline,
             "replay_snapshot": self.replay_snapshot,
             "mock": self.mock,
@@ -349,6 +358,9 @@ class RetrievalEngine:
 
         final = self._ensure_source_diversity(kept)[: self.config.top_k]
 
+        # ---- full text for the quote-verification guard (bounded, fail-soft)
+        self._attach_full_text(final, claim_text, audit)
+
         # ---- audit
         used_urls = {canonical_url(ev.url) for ev in final}
         for status in audit.sources:
@@ -543,6 +555,68 @@ class RetrievalEngine:
             )
         return _attach(status, picked)
 
+    def _attach_full_text(
+        self, final: list[Evidence], claim_text: str, audit: RetrievalAudit
+    ) -> None:
+        """Fetch page text for the top results so S3 can verify quotes honestly.
+
+        Bounded three ways: only ``fetch_full_text`` items, in parallel, behind
+        ``fulltext_deadline_s``. Anything not fetched keeps ``text_scope="snippet"``
+        plus a reason, so the guard can never overclaim.
+        """
+        if not final or self.config.fetch_full_text <= 0 or self.config.offline:
+            return
+        if self.config.replay_snapshot:
+            return  # snapshots carry their own captured text
+
+        from fulltext import fetch_page_text
+
+        targets = final[: self.config.fetch_full_text]
+        audit.full_text_requested = len(targets)
+        deadline = time.perf_counter() + max(0.5, self.config.fulltext_deadline_s)
+
+        def work(ev: Evidence):
+            return ev, fetch_page_text(
+                ev.url,
+                timeout=self.config.fulltext_timeout_s,
+                max_chars=self.config.fulltext_max_chars,
+                cache=self.cache,
+            )
+
+        pool = ThreadPoolExecutor(max_workers=min(4, len(targets)))
+        futures = [pool.submit(work, ev) for ev in targets]
+        try:
+            for future in futures:
+                remaining = deadline - time.perf_counter()
+                if remaining <= 0.1:
+                    break
+                try:
+                    ev, page = future.result(timeout=remaining)
+                except TimeoutError:
+                    continue
+                except Exception as exc:  # pragma: no cover - defensive
+                    audit.full_text_reasons.append(f"{type(exc).__name__}")
+                    continue
+                if page.ok:
+                    ev.full_text = page.text
+                    ev.text_scope = "full_text"
+                    ev.text_scope_reason = None
+                    audit.full_text_fetched += 1
+                    audit.full_text_chars += page.chars
+                else:
+                    ev.text_scope = "snippet"
+                    ev.text_scope_reason = page.reason
+                    audit.full_text_failed += 1
+                    audit.full_text_reasons.append(f"{domain_of(ev.url)}: {page.reason}")
+        finally:
+            pool.shutdown(wait=False, cancel_futures=True)
+
+        if audit.full_text_failed:
+            audit.notes.append(
+                f"snippet-only evidence: {audit.full_text_failed} item(s) could not be "
+                "fetched in full; quotes for those can only be checked against the snippet"
+            )
+
     def _ensure_source_diversity(self, ordered: list[Evidence]) -> list[Evidence]:
         """Keep the relevance order, but make sure each *kind* of source that
         produced something is represented (when top_k allows).
@@ -585,6 +659,9 @@ class RetrievalEngine:
             published_at=raw.published_at,
             source_kind=raw.source_kind,  # type: ignore[arg-type]
             relevance=calibrate_relevance(raw_similarity, self.config.relevance_scale),
+            full_text=str(raw.extra.get("full_text", "") or ""),
+            text_scope=raw.extra.get("text_scope", "snippet"),  # type: ignore[arg-type]
+            text_scope_reason=raw.extra.get("text_scope_reason"),
         )
 
 

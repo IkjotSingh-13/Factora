@@ -1,0 +1,133 @@
+{
+  "generated_at": "2026-10-31T18:33:45+00:00",
+  "mode": "offline",
+  "note": "Sample output of s2_service.retrieve_for_claims(). S2 is retrieval-only: every evidence item has stance=NEUTRAL and quote_verified=false. 'quote_guard' says what a quote may be checked against per item.",
+  "retrieval_summary": {
+    "claims": 3,
+    "evidence_items": 4,
+    "distinct_domains": 4,
+    "quote_verified_items": 0,
+    "claims_without_evidence": 1,
+    "full_text_items": 0,
+    "snippet_only_items": 4
+  },
+  "bundles": [
+    {
+      "claim": {
+        "id": "claim_001",
+        "text": "Vitamin C supplementation prevents the common cold in most adults",
+        "type": "factual",
+        "article_quote": null,
+        "time_sensitive": false
+      },
+      "evidence": [
+        {
+          "id": "ev_d2ea075ca8",
+          "claim_id": "claim_001",
+          "url": "https://www.snopes.com/fact-check/vitamin-c-common-cold/",
+          "domain": "snopes.com",
+          "title": "FACT CHECK: Does vitamin C prevent the common cold?",
+          "snippet": "Rating: Mixed. Claims that vitamin C reliably prevents the common cold in most adults are not supported by the body of randomized trials. Some studies in marathon runners and soldiers show a reduced incidence, but community trials in adults show no significant prevention effect.",
+          "full_text": "",
+          "published_at": "2023-11-02",
+          "source_kind": "mock",
+          "relevance": 0.9931,
+          "credibility": 0.1,
+          "stance": "NEUTRAL",
+          "quote": "",
+          "quote_verified": false,
+          "rationale": "",
+          "context_score": 0.7,
+          "context_gap": false
+        },
+        {
+          "id": "ev_b21071f892",
+          "claim_id": "claim_001",
+          "url": "https://ods.od.nih.gov/factsheets/VitaminC-HealthProfessional/",
+          "domain": "ods.od.nih.gov",
+          "title": "Vitamin C — Fact Sheet for Health Professionals",
+          "snippet": "Vitamin C (ascorbic acid) is a water-soluble vitamin. Many people take vitamin C supplements to prevent or treat the common cold. Overall, the evidence to date suggests that routine supplementation with vitamin C does not reduce the incidence of the common cold in the general population, although it may shorten duration slightly in some groups. Most trials found no meaningful reduction in cold incidence among adults in the community.",
+          "full_text": "",
+          "published_at": "2024-01-15",
+          "source_kind": "mock",
+          "relevance": 0.7559,
+          "credibility": 0.1,
+          "stance": "NEUTRAL",
+          "quote": "",
+          "quote_verified": false,
+          "rationale": "",
+          "context_score": 1.0,
+          "context_gap": false
+        },
+        {
+          "id": "ev_c12b25d4b7",
+          "claim_id": "claim_001",
+          "url": "https://en.wikipedia.org/wiki/Common_cold",
+          "domain": "en.wikipedia.org",
+          "title": "Common cold — Overview",
+          "snippet": "The common cold is a viral infection of the upper respiratory tract. Over 200 virus strains are implicated. No vaccine exists. Prevention is mainly hand washing and avoiding close contact with infected people. Vitamin C supplementation has not been shown to prevent colds in the general population; zinc may shorten duration in some trials.",
+          "full_text": "",
+          "published_at": "2024-06-01",
+          "source_kind": "mock",
+          "relevance": 0.5698,
+          "credibility": 0.1,
+          "stance": "NEUTRAL",
+          "quote": "",
+          "quote_verified": false,
+          "rationale": "",
+          "context_score": 0.8,
+          "context_gap": false
+        }
+      ],
+      "quote_guard": {
+        "ev_d2ea075ca8": "snippet",
+        "ev_b21071f892": "snippet",
+        "ev_c12b25d4b7": "snippet"
+      }
+    },
+    {
+      "claim": {
+        "id": "claim_002",
+        "text": "The Great Wall of China is visible from space with the naked eye",
+        "type": "factual",
+        "article_quote": null,
+        "time_sensitive": false
+      },
+      "evidence": [
+        {
+          "id": "ev_c03c6b9525",
+          "claim_id": "claim_002",
+          "url": "https://whc.unesco.org/en/list/438/",
+          "domain": "whc.unesco.org",
+          "title": "Great Wall of China — Length and visibility",
+          "snippet": "The Great Wall was built over many centuries and its total length is estimated at 21,196 kilometres. Contrary to a common myth, the Great Wall is not visible from space with the naked eye; astronauts have repeatedly reported that it cannot be seen.",
+          "full_text": "",
+          "published_at": "2023-09-01",
+          "source_kind": "mock",
+          "relevance": 1.0,
+          "credibility": 0.1,
+          "stance": "NEUTRAL",
+          "quote": "",
+          "quote_verified": false,
+          "rationale": "",
+          "context_score": 1.0,
+          "context_gap": false
+        }
+      ],
+      "quote_guard": {
+        "ev_c03c6b9525": "snippet"
+      }
+    },
+    {
+      "claim": {
+        "id": "claim_003",
+        "text": "The VerifyAI team invented the quantum banana protocol in 2026",
+        "type": "factual",
+        "article_quote": null,
+        "time_sensitive": false
+      },
+      "evidence": [],
+      "quote_guard": {}
+    }
+  ]
+}

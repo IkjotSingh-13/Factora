@@ -38,7 +38,11 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Iterable, Optional, Sequence
 
 from contract_adapter import (
+    SCOPE_FULL_TEXT,
+    SCOPE_SNIPPET,
     extract_entities,
+    quote_check_region,
+    quote_scope,
     to_claim_bundle,
     to_claim_input,
     to_score_request,
@@ -268,10 +272,13 @@ def apply_analysis(
 
         quote = str(_safe_get(analysis, "quote", default="") or "")
         claimed_verified = bool(_safe_get(analysis, "quote_verified", default=False))
+        # Check against page text when we have it; fall back to the snippet but
+        # never pretend that is a source-level verification.
+        page_text = str(target.get("full_text") or "").strip()
+        snippet_text = str(target.get("snippet") or "")
+        region = page_text if page_text else snippet_text
         verified = claimed_verified and (
-            quote_present(quote, target.get("snippet", "") + " " + target.get("full_text", ""))
-            if require_quote_in_text
-            else bool(quote)
+            quote_present(quote, region) if require_quote_in_text else bool(quote)
         )
 
         target["stance"] = stance
@@ -292,6 +299,33 @@ def apply_analysis(
     return list(bundles)
 
 
+def quote_support(
+    item: dict[str, Any], quote: str, *, scope: Optional[str] = None
+) -> tuple[bool, str]:
+    """Whether ``quote`` literally appears in what we actually retrieved.
+
+    Returns ``(found, scope_used)``. This is a *text check*, not a stance: S3 owns
+    the verification policy, this just stops it from checking a quote against text
+    we never had. ``scope_used`` is ``"snippet"`` when no page text was available,
+    which means a match proves only "present in the search snippet".
+    """
+    resolved = scope or (
+        SCOPE_FULL_TEXT if str(item.get("full_text") or "").strip() else SCOPE_SNIPPET
+    )
+    region = quote_check_region(item, resolved)
+    return quote_present(quote, region), resolved
+
+
+def verification_scopes(bundles: Sequence[dict[str, Any]]) -> dict[str, int]:
+    """Count how many items S3 can verify against full text vs snippet only."""
+    counts = {SCOPE_FULL_TEXT: 0, SCOPE_SNIPPET: 0}
+    for bundle in bundles:
+        for item in bundle.get("evidence", []):
+            scope = SCOPE_FULL_TEXT if str(item.get("full_text") or "").strip() else SCOPE_SNIPPET
+            counts[scope] += 1
+    return counts
+
+
 def retrieval_summary(bundles: Sequence[dict[str, Any]]) -> dict[str, Any]:
     """Small audit block for the report footer, computed from bundles alone."""
     claims = len(bundles)
@@ -305,12 +339,15 @@ def retrieval_summary(bundles: Sequence[dict[str, Any]]) -> dict[str, Any]:
     verified = sum(
         1 for b in bundles for item in b.get("evidence", []) if item.get("quote_verified")
     )
+    scopes = verification_scopes(bundles)
     return {
         "claims": claims,
         "evidence_items": evidence,
         "distinct_domains": len(domains),
         "quote_verified_items": verified,
         "claims_without_evidence": sum(1 for b in bundles if not b.get("evidence")),
+        "full_text_items": scopes[SCOPE_FULL_TEXT],
+        "snippet_only_items": scopes[SCOPE_SNIPPET],
     }
 
 
