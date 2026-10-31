@@ -1,0 +1,2 @@
+# Install the backend runtime and test dependencies from one root command.
+-r backend/requirements.txt
