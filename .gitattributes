@@ -1,16 +1,19 @@
 # Normalize text files in Git while keeping binary files untouched.
 * text=auto
 
-# Keep source, config, and documentation line endings stable across platforms.
+# Windows scripts must be CRLF on checkout, whatever each member's autocrlf says
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Everything else: LF for stable diffs across platforms
 *.py text eol=lf
 *.md text eol=lf
 *.json text eol=lf
-*.toml text eol=lf
-*.ini text eol=lf
 *.txt text eol=lf
+*.ini text eol=lf
 *.yml text eol=lf
 *.yaml text eol=lf
-*.html text eol=lf
-*.css text eol=lf
-*.js text eol=lf
-*.sh text eol=lf
+
+*.zip binary
+*.png binary
