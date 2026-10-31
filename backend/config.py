@@ -121,6 +121,9 @@ class Settings:
     enable_qualifier_check: bool = field(
         default_factory=lambda: _env_bool("S1_CHECK_QUALIFIERS", True)
     )
+    enable_dense_propositions: bool = field(
+        default_factory=lambda: _env_bool("S1_DENSE_PROPOSITIONS", True)
+    )
 
     # --- HTTP / article fetching -------------------------------------------
     http_timeout: float = field(default_factory=lambda: _env_float("S1_HTTP_TIMEOUT", 15.0))

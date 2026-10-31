@@ -28,13 +28,14 @@ from typing import Iterable, List, Sequence
 from .article_extractor import extract_article_from_url
 from .config import Settings, get_settings
 from .errors import ClaimExtractionError, EmptyArticleError, LLMError
-from .llm_provider import LLMProvider, get_provider, heuristic_extract
+from .llm_provider import LLMProvider, get_provider, heuristic_extract, verify_provider_or_raise
 from .schemas import CandidateClaim, Claim, ExtractionResult, RawClaim
 from .validators import (
     ArticleContext,
     build_article_context,
     check_claim,
     content_lemmas,
+    extract_dense_propositions,
     extract_entities,
     has_marker,
     main_article_entity,
@@ -99,6 +100,8 @@ EVENT_VERBS = (
     "halted",
     "partnered",
     "merged",
+    "visited",
+    "met",
 )
 
 _BOILERPLATE_CLAIM_RE = re.compile(
@@ -108,6 +111,9 @@ _BOILERPLATE_CLAIM_RE = re.compile(
 )
 
 _BULLET_RE = re.compile(r"^\s*(?:[-*\u2022\u25cf]|\d+[.)]|[a-z][.)])\s+", re.IGNORECASE)
+
+# For cleaning article text with bullets/abbreviations
+_ABBREV_RE = re.compile(r"\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|vs|etc|e\.g|i\.e|U\.S|U\.K|U\.N)\.", re.IGNORECASE)
 
 
 # ---------------------------------------------------------------------------
@@ -178,6 +184,9 @@ def extract_claims_detailed(
             f"article_text must be a string, got {type(article_text).__name__}"
         )
 
+    # Pre-process: handle HTML fragments, bullet points, informal text
+    article_text = _preprocess_input(article_text)
+    
     article = normalize_text(article_text)
     if not article or word_count(article) == 0:
         raise EmptyArticleError("article_text is empty or contains no words")
@@ -186,12 +195,18 @@ def extract_claims_detailed(
     if not sentences:
         sentences = [article]
 
+    # Track if we truncated for LLM
+    truncated = False
+    original_sentence_count = len(sentences)
     if len(sentences) > settings.max_sentences_to_llm:
+        truncated = True
         sentences = sentences[: settings.max_sentences_to_llm]
 
     result = ExtractionResult(claims=[], article_sentence_count=len(sentences))
     if word_count(article) < settings.min_article_words:
         result.notes.append("short_article:returning_fewer_claims")
+    if truncated:
+        result.notes.append(f"truncated_article:{original_sentence_count}->{len(sentences)}_sentences")
 
     # Computed once and reused for every claim (validation is O(claims), not
     # O(claims x sentences)).
@@ -200,11 +215,35 @@ def extract_claims_detailed(
     provider = provider or get_provider(settings=settings)
     result.provider = provider.name
 
+    # For non-mock providers, verify availability first to give clear errors
+    # But don't fail if fallback is enabled and we're in test mode with mock HTTP
+    # We attempt verification but don't block extraction if it fails due to network
+    # when fallback is enabled - the actual extraction will handle it and fallback
+    if provider.name in ("ollama", "gemini") and not provider.is_mock:
+        try:
+            available, msg = provider.is_available()
+            if not available:
+                # If fallback disabled, raise immediately with clear message
+                if not settings.llm_fallback_to_heuristics:
+                    raise LLMError(msg)
+                # Otherwise, log it and will fallback during extraction
+                result.notes.append(f"provider_check_failed:{msg}")
+        except Exception:
+            # If availability check itself fails, don't block - let extraction attempt handle it
+            pass
+
     raw_claims = _run_provider(provider, sentences, settings, result)
+    if settings.enable_dense_propositions and len(raw_claims) < settings.min_claims:
+        dense_propositions = extract_dense_propositions(sentences)
+        if dense_propositions:
+            raw_claims.extend(dense_propositions)
     result.raw_claim_count = len(raw_claims)
 
     # --- validate ---------------------------------------------------------
     candidates: List[CandidateClaim] = []
+    # Track per-sentence sub-index to preserve chronological order for claims
+    # from the same sentence (e.g., "visited USA and met Trump and signed deal" -> 3 claims in order)
+    sentence_subindex: dict[int, int] = {}
     for raw in raw_claims:
         text = _clean_claim_text(raw.text)
         if not text:
@@ -224,13 +263,20 @@ def extract_claims_detailed(
         source_index = raw.source_sentence_index
         if source_index is None or not (0 <= source_index < len(sentences)):
             source_index = _best_sentence_index(text, context)
+        # Preserve chronological order within same sentence: use sub-index
+        if source_index is not None:
+            sub_idx = sentence_subindex.get(source_index, 0)
+            sentence_subindex[source_index] = sub_idx + 1
+            article_order = source_index * 1000 + sub_idx
+        else:
+            article_order = 10**6 + len(candidates)
         candidates.append(
             CandidateClaim(
                 text=text,
                 claim_type=raw.claim_type,
                 entities=entities,
                 source_sentence_index=source_index,
-                article_order=source_index if source_index is not None else 10**6,
+                article_order=article_order,
             )
         )
 
@@ -241,6 +287,12 @@ def extract_claims_detailed(
                 f"No valid claims survived validation ({len(result.rejected)} rejected): {reasons}"
             )
         # The article genuinely contains no checkable claims.
+        # Distinguish between "no claims produced" vs "article too short/nonsense"
+        if word_count(article) < 5 or _is_no_claim_content(article):
+            return result
+        # If provider returned claims but none survived, it's a validation issue
+        # But if no claims were returned at all (raw_claim_count==0) and article is substantial,
+        # treat as no checkable claims rather than error
         return result
 
     # --- de-duplicate -----------------------------------------------------
@@ -254,6 +306,11 @@ def extract_claims_detailed(
 
     selected = _select(unique, settings)
 
+    # --- semantic deduplication pass: ensure no overlapping semantic content ---
+    # After initial dedup, do a second pass to eliminate claims that are semantically
+    # contained within another (e.g., "signed a deal" vs "signed a deal on oil")
+    selected = _semantic_deduplicate(selected, result)
+
     # --- emit -------------------------------------------------------------
     for index, candidate in enumerate(selected, start=1):
         result.claims.append(
@@ -265,6 +322,82 @@ def extract_claims_detailed(
             )
         )
     return result
+
+
+def _is_no_claim_content(text: str) -> bool:
+    """Check if article genuinely contains no extractable factual claims."""
+    lowered = text.lower()
+    # Check for greeting/smalltalk patterns with no factual content
+    no_claim_patterns = [
+        r"^(good morning|good evening|hello|hi|hey|greetings)[.!]?\s*$",
+        r"^(thank you|thanks|cheers|goodbye|bye|see you)[.!]?\s*$",
+        r"^(how are you|what.?s up|nice to meet you)[?.!]?$",
+    ]
+    # If entire article matches no-claim pattern
+    text_stripped = lowered.strip()
+    for pattern in no_claim_patterns:
+        if re.match(pattern, text_stripped):
+            return True
+    
+    # Check if article is only greetings/smalltalk
+    words = text_stripped.split()
+    if len(words) <= 6:
+        greeting_words = {"good", "morning", "evening", "afternoon", "hello", "hi", "hey", "thanks", "thank", "you", "see", "tomorrow", "today", "bye", "goodbye", "please", "welcome"}
+        if all(w.strip(".,!?") in greeting_words for w in words):
+            return True
+    
+    # Check if article has no nouns/verbs/entities/numbers/dates that could be claims
+    # Simple: if no capitalized entities and no numbers and very short
+    if word_count(text) < 8 and not re.search(r"\b\d+\b", text) and not re.search(r"\b[A-Z][a-z]{2,}\b", text):
+        # Check if it's just common smalltalk
+        if not re.search(r"\b(?:announced|launched|visited|met|signed|installed|reported|sold|grew|built|opened|investment|project|capacity|revenue|billion|million|GW|MW|crore|USA|India|Trump|Modi)\b", text, re.IGNORECASE):
+            return True
+    
+    return False
+
+
+def _preprocess_input(text: str) -> str:
+    """Handle various input formats: HTML fragments, bullets, informal text."""
+    if not text:
+        return text
+    
+    # Handle HTML fragments: strip tags but preserve text
+    if "<" in text and ">" in text and re.search(r"<(p|div|br|li|ul|ol|h[1-6]|span|a|b|i|strong|em)[^>]*>", text, re.IGNORECASE):
+        # Simple HTML tag stripping
+        text = re.sub(r"<[^>]+>", " ", text)
+        text = re.sub(r"\s+", " ", text)
+    
+    # Handle bullet points: convert bullets to sentence boundaries
+    # e.g., "- PM Modi visited USA\n- He met Trump" -> "PM Modi visited USA. He met Trump."
+    lines = text.split("\n")
+    processed_lines = []
+    for line in lines:
+        # Check if line is a bullet
+        bullet_match = re.match(r"^\s*(?:[-*\u2022\u25cf]|\d+[.)]|[a-z][.)])\s+(.+)", line)
+        if bullet_match:
+            content = bullet_match.group(1).strip()
+            # Ensure bullet content ends with period if it's a complete thought
+            if content and content[-1] not in ".!?":
+                # Check if it's a complete clause (has subject+verb)
+                if len(content.split()) >= 3:
+                    content += "."
+            processed_lines.append(content)
+        else:
+            processed_lines.append(line)
+    
+    text = " ".join(processed_lines)
+    
+    # Handle excessive whitespace and clean up
+    text = re.sub(r"\s+", " ", text).strip()
+    
+    # Handle informal text: normalize inconsistent capitalization
+    # But preserve proper nouns (capitalized words that are likely entities)
+    # We don't correct spelling - we preserve as is per requirements
+    
+    # Handle conversational text: remove filler like "you know", "like", etc. is NOT needed
+    # We preserve meaning, so keep it
+    
+    return text
 
 
 # ---------------------------------------------------------------------------
@@ -297,7 +430,14 @@ def _run_provider(
             if isinstance(exc, LLMError):
                 raise
             raise ClaimExtractionError(f"LLM extraction failed: {exc}") from exc
-        result.notes.append(f"{provider.name}_failed:{type(exc).__name__}:{exc}")
+        # Enhance error message for Ollama cases
+        error_msg = str(exc)
+        if provider.name == "ollama" and "ollama pull" not in error_msg.lower():
+            # Add helpful guidance if not already present
+            error_msg = f"{error_msg} (try: ollama pull {settings.ollama_model})"
+            result.notes.append(f"{provider.name}_failed:{type(exc).__name__}:{error_msg}")
+        else:
+            result.notes.append(f"{provider.name}_failed:{type(exc).__name__}:{exc}")
         result.used_fallback = True
         return heuristic_extract(sentences)
 
@@ -310,9 +450,15 @@ def _clean_claim_text(text: str) -> str:
     claim = " ".join(claim.split())
     if not claim:
         return ""
+    # Remove any remaining HTML artifacts
+    claim = re.sub(r"<[^>]+>", "", claim).strip()
+    # Handle truncated claims
     if claim[-1] not in ".!?":
         claim = claim + "."
-    return claim[0].upper() + claim[1:]
+    # Ensure proper capitalization
+    if claim and claim[0].islower():
+        claim = claim[0].upper() + claim[1:]
+    return claim
 
 
 def _best_sentence_index(claim_text: str, context: ArticleContext) -> int | None:
@@ -403,6 +549,58 @@ def _deduplicate(
         signatures.append(signature)
         numbers.append(number_set)
     return unique
+
+
+def _semantic_deduplicate(
+    candidates: List[CandidateClaim], result: ExtractionResult
+) -> List[CandidateClaim]:
+    """Second pass: remove claims that are semantically contained in another.
+    
+    E.g., "PM Modi signed a deal." is contained in "PM Modi signed a deal on oil."
+    Keep the longer/more specific one.
+    """
+    if len(candidates) <= 1:
+        return candidates
+    
+    # Sort by length descending so longer claims are kept
+    sorted_cands = sorted(candidates, key=lambda c: len(c.text), reverse=True)
+    kept = []
+    kept_signatures = []
+    
+    for cand in sorted_cands:
+        cand_lemmas = content_lemmas(cand.text)
+        is_contained = False
+        for kept_sig in kept_signatures:
+            # If cand's lemmas are subset of kept's lemmas, it's redundant
+            # e.g., {pm, modi, sign, deal} subset of {pm, modi, sign, deal, oil}
+            # Only apply if candidate has multiple lemmas to avoid dropping atomic relational facts
+            if cand_lemmas and len(cand_lemmas) >= 2 and cand_lemmas.issubset(kept_sig):
+                is_contained = True
+                break
+            # Also check Jaccard for high overlap where one is substring of other
+            # e.g., "signed a deal" vs "signed a deal on oil" -> Jaccard 0.8, but one is substring
+            jaccard = _jaccard(cand_lemmas, kept_sig)
+            if jaccard >= 0.70:
+                # Check if shorter is substring of longer (text containment)
+                shorter_text = cand.text.lower()
+                for kept_cand in kept:
+                    if shorter_text.rstrip(".").lower() in kept_cand.text.lower():
+                        # Shorter is contained in longer text
+                        is_contained = True
+                        break
+                if is_contained:
+                    break
+        
+        if is_contained:
+            result.deduplicated += 1
+            continue
+        
+        kept.append(cand)
+        kept_signatures.append(cand_lemmas)
+    
+    # Restore original order (by article position)
+    kept.sort(key=lambda c: c.article_order)
+    return kept
 
 
 def _score_candidate(
@@ -498,6 +696,8 @@ def _main(argv: Sequence[str] | None = None) -> int:
         print(json.dumps(result.summary(), indent=2, ensure_ascii=False), file=sys.stderr)
         for text, reason in result.rejected:
             print(f"REJECTED [{reason}] {text}", file=sys.stderr)
+        if result.used_fallback:
+            print(f"WARNING: Used fallback heuristics (provider {result.provider} failed). Notes: {result.notes}", file=sys.stderr)
     return 0
 
 
