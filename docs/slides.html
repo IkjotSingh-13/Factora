@@ -209,7 +209,7 @@ evidence for any claim”</pre>
   <h2>What we actually tested</h2>
   <table style="margin-top:12px">
     <tr><th>Check</th><th>Command</th><th class="n">Result</th></tr>
-    <tr><td>Whole suite</td><td><code>python -m pytest -q</code></td><td class="n yes">393 passed, exit 0</td></tr>
+    <tr><td>Whole suite</td><td><code>python -m pytest -q</code></td><td class="n yes">415 passed, exit 0</td></tr>
     <tr><td>S3 ↔ S2 seam gate</td><td><code>scripts/check_s3_contract.py --analyze s3_analysis:analyze --replay data/demo_snapshot.json</code></td><td class="n yes">compatible · 10/10 items · 0 fabricated quotes</td></tr>
     <tr><td>Labelled QA set — offline</td><td><code>scripts/run_test_set.py</code></td><td class="n yes">9/9 directions met · 0 invariant violations · 1 unmeasured</td></tr>
     <tr><td>Same set — real captured sources</td><td><code>run_test_set.py --mode snapshot</code></td><td class="n mm">5/9 met · 0 invariant violations</td></tr>

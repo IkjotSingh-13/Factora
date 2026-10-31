@@ -10,8 +10,21 @@ Linux/macOS and are worth knowing before they cost you time at 3 a.m.
 ```powershell
 # from the repo folder, in PowerShell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\scripts\setup_windows.ps1
+.\scripts\bootstrap.ps1        # the whole project: venv, all three requirements
+                                 # files, spaCy model, .env, then the test suite
 ```
+
+`scripts\bootstrap.ps1` is the project-level installer (same job as `bootstrap.sh` on
+macOS/Linux): it is idempotent, prints a fix line per failure, and never writes outside the
+repo. `-Ollama` additionally points `.env` at a local model and pulls it.
+
+```powershell
+.\scripts\bootstrap.ps1 -SkipTests -Ollama   # no suite, plus qwen2.5:7b for S1/S3
+```
+
+`scripts\setup_windows.ps1` is the older **S2-module-only** installer (its own requirements
+file, its own offline tests). Use it if you are only working on retrieval; use `bootstrap.ps1`
+to work on the app.
 
 No-PowerShell fallback (cmd.exe, ignores execution policy entirely):
 
