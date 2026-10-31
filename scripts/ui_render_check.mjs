@@ -135,8 +135,71 @@ for (const key of ["C", "R", "A", "T", "K"]) {
 }
 check(audit.includes("Audit trail"), "audit footer not rendered");
 check(audit.includes("quotes dropped by guard") || audit.includes("quote guard"), "quote-guard counters missing from audit");
+check(audit.includes("sources that failed"), "failed sources are not reported in the audit footer");
+
+// The plan's Claim contract lists `entities`. ClaimInput (the frozen scoring schema)
+// has no such field on purpose, so the pipeline carries them in `grounding.claims` and
+// the UI must join them back onto the card — otherwise the contract field silently
+// vanishes between the API and the screen.
+const ground = (payload.grounding && payload.grounding.claims) || [];
+const withEntities = ground.filter((item) => (item.entities || []).length);
+if (withEntities.length) {
+  const name = withEntities[0].entities[0];
+  check(results.includes(name), `entities from the grounding audit ("${name}") not shown on the claim card`);
+}
 check(banner.length > 0, "no status banner rendered");
 check(!/undefined|NaN|\[object Object\]/.test(results), "markup contains undefined/NaN/[object Object]");
+
+/* ------------------------------------- second pass: the fields that are joined back
+   A captured fixture only proves something if it contains it. This payload is written
+   by hand to carry exactly the two things the pipeline puts *outside* the claim object
+   — S1 entities (ClaimInput has no entities field) and the names of sources that failed
+   — so the join-back logic cannot rot into an unchecked no-op. */
+const crafted = {
+  mode: "offline",
+  demo_backup: false,
+  note: "",
+  s1: { provider: "mock" },
+  warnings: ["S2: tavily timed out after 8s"],
+  stages: [{ name: "S2 retrieval (offline)", status: "degraded", ms: 3, detail: "1 source failed" }],
+  retrieval_summary: { evidence_items: 1, distinct_domains: 1, quote_verified_items: 0, claims_without_evidence: 0, snippet_only_items: 1 },
+  s3_audit: { analyzer: "lexical", evidence_analyzed: 1, decisive: 0, neutral: 1, quote_dropped_count: 1 },
+  // entity names deliberately do not occur in the claim text: an assertion that leans on
+  // shared words passes even when the chip is never rendered.
+  grounding: { claims_dropped_ungrounded: 0, claims: [{ id: "claim_001", entities: ["Acme Pte Ltd", "New Delhi NCR"], original_text: "Acme opened a plant in New Delhi." }] },
+  per_claim_retrieval: [{
+    claim_id: "claim_001",
+    sources: [{ id: "ev_1", quote_verified: false, quote: "", snippet: "…", url: "https://example.com/a", domain: "example.com", title: "A", source_kind: "mock", relevance: 0.4, credibility: 0.1, stance: "NEUTRAL", published_at: null }],
+    retrieval: { sources_queried: 2, sources_ok: 1, failed_source_names: ["tavily"] },
+  }],
+  report: {
+    disclaimer: "Evidence-weighted assessment.",
+    claims: [{
+      claim: { id: "claim_001", text: "Acme opened a plant in New Delhi.", type: "factual", article_quote: "Acme opened a plant in New Delhi.", time_sensitive: false },
+      verdict: "INSUFFICIENT EVIDENCE", stance_score: 0, evidence_strength: 0.5, score_raw: 0.5, shrinkage_factor: 0,
+      scores: { C: 0.35, R: 0, A: 0, T: 0.5, K: 0.5 },
+      contributions: { C: 0.105, R: 0, A: 0, T: 0.05, K: 0.05 },
+      conflicts: [], evidence: [],
+      audit: { n_retrieved: 1, n_used: 0, n_independent: 0, hallucinated_quotes_dropped: 1, unknown_freshness: false, sources_failed: ["tavily"] },
+    }],
+  },
+};
+api.render(crafted);
+const craftResults = byId("results").innerHTML;
+const craftAudit = byId("audit").innerHTML;
+const entityChip = (craftResults.match(/title="Entities S1 found[^"]*"[^>]*>([^<]*)/) || [])[1] || "";
+check(entityChip.includes("Acme Pte Ltd") && entityChip.includes("New Delhi NCR"),
+  `S1 entities are not joined onto the claim card (chip reads: "${entityChip.trim()}")`);
+
+// "sources that failed" must name the source inside its own counter, not merely exist
+// somewhere on the page — the warnings line mentions the same source by design.
+const failedCell = (craftAudit.match(/sources that failed<\/span><span class="v">([^<]*)/) || [])[1] || "";
+check(/tavily/.test(failedCell) && /1/.test(failedCell),
+  `failed source is not reported in the audit counter (reads: "${failedCell.trim()}")`);
+check(craftAudit.includes("1 / 2") || craftAudit.includes("1/2"),
+  "sources queried is not reported as ok/queried");
+check(!/undefined|NaN|\[object Object\]/.test(craftResults + craftAudit),
+  "crafted payload renders undefined/NaN/[object Object]");
 
 /* ------------------------------------------------- DOM contract of the page */
 // Every id the script reaches for must exist in the static markup, or the app throws

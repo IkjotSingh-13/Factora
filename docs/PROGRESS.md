@@ -25,7 +25,9 @@ exists — not against what a document claims.
 | UI shows quote scope honestly (full text vs snippet vs unverified) | Frontend | **done** | `quote_scope` added to the contract + chip on every evidence card |
 | Sample inputs for the demo | QA | **done** | `data/samples.json` (5 samples, each written to land on a specific honest outcome), served by `GET /api/samples` |
 | **Labelled QA test set + recorded results** | **QA** | **done** | `data/test_set.json` (10 cases), `scripts/run_test_set.py`, `data/test_set_results.json`, `docs/TEST_SET.md`; guarded by `tests/test_test_set.py` |
-| README / demo script / scoring doc | all | **done** | `README.md`, `docs/DEMO.md`, `docs/SCORING.md`, `docs/TEST_SET.md`, `.env.example` (S3 + verify vars now documented) |
+| README / demo script / scoring doc | all | **done** | `README.md`, `docs/DEMO.md` (+ rehearsal checklist), `docs/SCORING.md`, `docs/TEST_SET.md`, `.env.example` (S3 + verify vars documented) |
+| Architecture doc + slides (hour 19–21 deliverable) | all | **done** | `docs/ARCHITECTURE.md`; `docs/slides.html` (9 slides, speaker notes, zero-build; navigation verified by executing its own script) |
+| Failed sources + entities visible in the UI | Frontend | **done** | audit footer row `sources that failed`, entities chip joined from `grounding.claims`; both asserted by `scripts/ui_render_check.mjs` on a crafted payload |
 | Stale duplicate tree removed | all | **done** | `s2_extract/verifyai/**` (36 files) deleted here — the same change as the unmerged `mansimran/cleanup-s2extract` branch |
 
 ## Cut list — what we deliberately did *not* build

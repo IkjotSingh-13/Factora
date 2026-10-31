@@ -457,7 +457,7 @@ function evidenceCard(item) {
   </article>`;
 }
 
-function claimCard(report, details, index) {
+function claimCard(report, details, index, grounded) {
   const claim = report.claim || {};
   const verdictClass = VERDICT_CLASS[report.verdict] || "v-insufficient";
   const dropped = report.audit.hallucinated_quotes_dropped || 0;
@@ -490,6 +490,11 @@ function claimCard(report, details, index) {
       <div class="meta">
         <span class="chip verdict ${verdictClass}">${esc(report.verdict)}</span>
         <span class="chip type">${esc(claim.type || "other")}</span>
+        ${grounded && grounded.entities && grounded.entities.length
+          ? `<span class="chip" title="Entities S1 found in this claim; they are what the retrieval query was built around">
+               ${grounded.entities.slice(0, 4).map((e) => esc(e)).join(" · ")}${grounded.entities.length > 4 ? ` +${grounded.entities.length - 4}` : ""}
+             </span>`
+          : ""}
         ${claim.time_sensitive ? '<span class="chip" title="This claim was scored with a short freshness half-life">time-sensitive</span>' : ""}
         ${report.evidence.length ? `<span class="chip">${report.evidence.length} verified evidence item${report.evidence.length === 1 ? "" : "s"}</span>` : '<span class="chip">0 verified evidence items</span>'}
         ${dropped ? `<span class="chip" title="Quotes that could not be found in the retrieved text">${dropped} quote${dropped === 1 ? "" : "s"} dropped</span>` : ""}
@@ -528,6 +533,9 @@ function renderAudit(data) {
     ["snippet-only items", summary.snippet_only_items ?? 0],
     ["claims with no evidence", summary.claims_without_evidence ?? 0],
     ["sources queried", `${totals.ok}/${totals.queried}`],
+    ["sources that failed", totals.names.size
+      ? `${totals.failed} — ${[...totals.names].join(", ")} (their results are simply absent; the run continues)`
+      : "none"],
     ["S3 stance assigned", `${s3.decisive ?? 0}/${s3.evidence_analyzed ?? 0}`],
     ["quotes dropped by guard", s3.quote_dropped_count ?? 0],
     ["claims dropped by quote guard", grounding.claims_dropped_ungrounded ?? 0],
@@ -555,8 +563,12 @@ function render(data) {
     renderAudit(data);
     return;
   }
+  // grounding.claims is where the entities S1 extracted live: ClaimInput (the frozen
+  // scoring contract) has no entities field, so the audit payload carries them instead.
+  const grounded = new Map(((data.grounding || {}).claims || []).map((item) => [item.id, item]));
   $("results").innerHTML = claims
-    .map((report, index) => claimCard(report, details.get(report.claim.id), index))
+    .map((report, index) => claimCard(
+      report, details.get(report.claim.id), index, grounded.get(report.claim.id)))
     .join("");
 
   const banner = $("banner");

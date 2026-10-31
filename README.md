@@ -70,6 +70,10 @@ curl -s localhost:8000/api/verify -H 'content-type: application/json' -d '{
 `docs/DEMO.md` is a 3-minute script built around those labels, including what to say when a
 mode returns nothing.
 
+`docs/ARCHITECTURE.md` is the map of how those pieces connect (seams, ownership, failure
+policy, extension points); `docs/SCORING.md` derives the number; `docs/slides.html` is the
+deck.
+
 ## Checks
 
 ```bash
@@ -120,7 +124,8 @@ s4/5: backend/app/pipeline/s4_scoring.py, s5_report.py
 glue: backend/app/pipeline/{article_quotes,verify,orchestrator}.py, contract_adapter.py
 ui:   frontend/index.html (one file), scripts/ui_render_check.mjs
 qa:   data/test_set.json, scripts/run_test_set.py, docs/TEST_SET.md
-docs: docs/{SCORING,DEMO,TEST_SET,PROGRESS,CONTRACT,INTEGRATION,WINDOWS}.md
+docs: docs/{ARCHITECTURE,SCORING,DEMO,TEST_SET,PROGRESS,CONTRACT,INTEGRATION,WINDOWS}.md
+deck: docs/slides.html (self-contained, no build step — open and press →)
 ```
 
 Dependencies stay where the plan put them: `requirements.txt` pulls in the three stage files

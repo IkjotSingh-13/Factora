@@ -120,31 +120,27 @@ git show origin/main:backend/app/models.py > tests/vendor/app_models_snapshot.py
 **Why this is worth the effort:** four branches, four ideas of the schema. A silent
 mismatch discovered at hour 20 costs the demo; discovered at hour 6 it costs ten minutes.
 
-## Separately: why bare `pytest` fails on main
+## Resolved in the final integration (2026-10-31)
 
-```
-ERROR tests/test_api.py    ModuleNotFoundError: No module named 'fastapi'
-ERROR tests/test_scoring.py ModuleNotFoundError: No module named 'app'
-```
+The pytest problem above was fixed and is no longer a gotcha: the root `pytest.ini` now has
+`testpaths = tests` + `pythonpath = backend`, and `requirements.txt` pulls in
+`backend/requirements.txt`, so from a fresh venv with dependencies installed
 
-Not broken code — two environment facts:
-
-1. `fastapi`/`httpx` are in `backend/requirements.txt`, not installed in the venv yet.
-2. The app package is at `backend/app`, so `from app.models import ...` only works with
-   `backend/` on `sys.path`. From the repo root it does not resolve.
-
-Fix for the lead (one line in the root `pytest.ini`, pytest ≥ 7 supports it):
-
-```ini
-[pytest]
-testpaths = tests
-pythonpath = backend
+```bash
+python -m pytest -q          # 393 tests, exit 0, from the repo root
 ```
 
-plus `pip install -r backend/requirements.txt`.
+runs everyone's suite in one go. No member needs to run a per-file command any more.
 
-Until then, each member runs their own suite:
+Three contract points got settled while wiring `/api/verify`. They are recorded here because
+the rule is "no silent renames":
 
-```powershell
-.venv\Scripts\python.exe -m pytest -q tests/test_s2.py     # 44 passed
-```
+| Plan-contract field | Final state | Why |
+| --- | --- | --- |
+| `Evidence.text_or_snippet` | `snippet` + `full_text` on `EvidenceItem` | unchanged from the mapping table above; `quote_scope` was **added** so "verified in page text" and "verified in snippet" are distinguishable on the wire and in the UI |
+| `Claim.entities` | not on `ClaimInput`; carried in `grounding.claims[].entities` | the scoring schema stays frozen, entities drive the retrieval query, and the claim card renders them from the audit payload. `scripts/ui_render_check.mjs` asserts that join against a crafted payload so the field cannot quietly stop appearing |
+| `Claim report.stance_direction` | `stance_score` (signed −1…+1) | the value is a magnitude, not an enum, and the verdict field carries the categorical direction; `docs/SCORING.md` shows both |
+
+Failed-source reporting is now also visible, not just present in the JSON: the audit footer
+renders `sources that failed` with the names and counts them against `sources_queried`, because
+"which sources did not answer?" is the first question a reviewer asks of a weak result.

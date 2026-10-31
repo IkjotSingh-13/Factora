@@ -101,6 +101,24 @@ better than the evidence."*
 | No API keys | Retrieval fails soft per source; the response lists which sources failed in `audit.sources_failed` | Run offline; the mode pill already says so |
 | Wi-Fi dead entirely | `mode=offline` needs no network at all | Continue from Beat 2 with the `refuted` sample |
 
+## Slides
+
+`docs/slides.html` is the deck — 9 slides with speaker notes, one self-contained file, no
+build step, no internet: open it in a browser, `→` to advance, `n` to show the notes, `f` for
+fullscreen, print it for a handout. It is ordered for the 3-minute version above, and slides
+6–7 (refusing + what we tested) are the ones to fall back to if the live run misbehaves.
+
+## Rehearsal checklist (run it twice, out loud, before you submit)
+
+- [ ] `python -m pytest -q` → 393 passed, exit 0. If it is not, you are demoing a broken build.
+- [ ] Server starts from a **fresh venv** on the presenting machine, not just yours.
+- [ ] Beat 1–4 performed once with **live** working, then once with the network turned off.
+- [ ] You can say the C=0.10 line without looking: offline sources are mock and scored 0.10 by design.
+- [ ] You can point at a `quote_scope` chip and explain snippet vs full text in one sentence.
+- [ ] You have read `data/test_set_results.json` recently enough to quote 9/9 and 5/9 in the same breath.
+- [ ] Backup article is already pasted in the input box of a second tab, ready to run.
+- [ ] Nobody in the team says "accuracy" unless they are about to say "we do not claim one".
+
 ## Numbers you may quote, and where they come from
 
 | Claim you can make | Source |

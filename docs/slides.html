@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VerifyAI — Problem 21 · deck</title>
+<style>
+  /* One self-contained file, like the app: no CDN, no fonts, no build step.
+     Open it, press → . Press n for speaker notes. Print it for a handout. */
+  :root {
+    --bg:#0d1117; --panel:#161b22; --ink:#e6edf3; --muted:#9aa7b4; --line:#26303c;
+    --accent:#4ea1ff; --good:#3fb950; --bad:#f85149; --warn:#d29922; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  * { box-sizing:border-box }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--ink);
+    font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif }
+  #deck { height:100%; display:grid; place-items:center; padding:4vh 5vw }
+  section { display:none; width:min(1080px,100%); }
+  section.on { display:block; animation:fade .25s ease-out }
+  @keyframes fade { from { opacity:0; transform:translateY(6px) } }
+  h1 { font-size:clamp(30px,5.4vw,58px); line-height:1.08; margin:0 0 18px; letter-spacing:-.02em }
+  h2 { font-size:clamp(24px,3.6vw,40px); margin:0 0 6px; letter-spacing:-.01em }
+  h3 { font-size:15px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); margin:26px 0 8px }
+  p.lead { font-size:clamp(17px,2vw,23px); color:#c9d5e1; max-width:78ch; margin:0 0 14px }
+  .kicker { font-family:var(--mono); font-size:13px; color:var(--accent); letter-spacing:.08em; text-transform:uppercase; margin-bottom:10px }
+  .grid { display:grid; gap:14px } .g2 { grid-template-columns:1fr 1fr } .g3 { grid-template-columns:repeat(3,1fr) }
+  @media (max-width:820px){ .g2,.g3 { grid-template-columns:1fr } }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px 18px }
+  .card b { color:#fff }
+  .num { font-family:var(--mono); font-size:clamp(26px,3.4vw,38px); color:var(--accent); line-height:1.1 }
+  .lbl { font-family:var(--mono); font-size:12.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em }
+  code, pre { font-family:var(--mono); font-size:14px }
+  pre { background:#0a0e14; border:1px solid var(--line); border-radius:10px; padding:14px 16px; overflow:auto; margin:0 }
+  table { width:100%; border-collapse:collapse; font-size:15px }
+  th,td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top }
+  th { font-family:var(--mono); font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted) }
+  td.n { font-family:var(--mono); text-align:right; white-space:nowrap }
+  .yes { color:var(--good) } .no { color:var(--bad) } .mm { color:var(--warn) }
+  ul { margin:6px 0 0; padding-left:20px } li { margin:6px 0 }
+  .flow { font-family:var(--mono); font-size:14px; line-height:1.9 }
+  .flow span { background:#0a0e14; border:1px solid var(--line); border-radius:8px; padding:4px 9px; margin-right:6px; display:inline-block }
+  .flow i { color:var(--muted); font-style:normal }
+  .quote { border-left:3px solid var(--accent); padding:10px 14px; background:#0a0e14; border-radius:0 8px 8px 0; font-size:17px }
+  #bar { position:fixed; left:0; right:0; bottom:0; height:3px; background:var(--accent); transition:width .2s }
+  #hud { position:fixed; right:14px; bottom:14px; font-family:var(--mono); font-size:12px; color:var(--muted);
+    background:rgba(13,17,23,.8); border:1px solid var(--line); border-radius:20px; padding:5px 12px; user-select:none }
+  .notes { display:none; margin-top:16px; border:1px dashed var(--line); border-radius:10px; padding:12px 14px;
+    background:#0a0e14; color:#b9c6d4; font-size:15px }
+  body.notes-on .notes { display:block }
+  .notes b { color:var(--warn); font-family:var(--mono); font-size:12px; text-transform:uppercase; letter-spacing:.08em }
+  @media print {
+    html,body { background:#fff; color:#111 }
+    #deck { display:block; padding:0 } section { display:block !important; page-break-after:always; width:100% }
+    .card,pre { background:#f6f7f9; border-color:#d6dbe1 } .num,.kicker { color:#0b57d0 } h3,.lbl,th { color:#5b6672 }
+    #bar,#hud { display:none } .notes { display:block }
+  }
+</style>
+</head>
+<body>
+<div id="deck">
+
+<section>
+  <div class="kicker">Problem 21 · Factora team</div>
+  <h1>We don’t ask an LLM whether an article is true.</h1>
+  <p class="lead">We extract the claims it actually makes, retrieve evidence for each one,
+    quote the source verbatim, and show how the assessment was calculated. When the evidence
+    is thin, we say <b>“not enough evidence”</b> — that is a result, not a failure.</p>
+  <div class="grid g3" style="margin-top:26px">
+    <div class="card"><div class="lbl">Team</div><b>Ikjot</b> S1+S3 · <b>Mansimran</b> S2<br><b>Lead</b> API+scoring · <b>Taranpreet</b> UI+QA+demo</div>
+    <div class="card"><div class="lbl">Stack</div>FastAPI · one zero-build HTML file<br>stdlib-only stance analyser</div>
+    <div class="card"><div class="lbl">Run it</div><code>uvicorn app.main:app<br>&nbsp;&nbsp;--app-dir backend</code> → <code>/</code></div>
+  </div>
+  <div class="notes"><b>notes</b> 10 seconds. Set up the contrast immediately: every other
+    entry in this category shows a confidence percentage from a model. We show quotes and arithmetic.</div>
+</section>
+
+<section>
+  <h2>The failure mode we are designing against</h2>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><h3 style="margin-top:0">What a language model does</h3>
+      <p>Reads the article, “knows” the topic, returns <code>{"verdict":"false","confidence":0.92}</code>.</p>
+      <ul><li>no source</li><li>no quote</li><li>a quote it invents looks identical to a real one</li>
+      <li>confident on claims with zero evidence</li></ul></div>
+    <div class="card"><h3 style="margin-top:0">What we do instead</h3>
+      <p>Retrieve → align → <b>check that the quote is in the text we fetched</b> → score the
+      verified subset → show the working.</p>
+      <ul><li>a claim without two independent domains gets <b>INSUFFICIENT EVIDENCE</b></li>
+      <li>every number is reproducible arithmetic</li><li>every source is a link you can open</li></ul></div>
+  </div>
+  <div class="quote" style="margin-top:18px">An unverifiable quote is dropped and counted. It is
+    never displayed. That is the whole trick, and it is enforced in three places.</div>
+  <div class="notes"><b>notes</b> The point of this slide is that the guard, not the model, is the
+    contribution. If asked “so what does the LLM do here?” — answer: optionally drafting stance
+    labels that still have to survive the guard; the demo runs with the LLM unavailable and the
+    audit trail says so.</div>
+</section>
+
+<section>
+  <h2>Pipeline</h2>
+  <p class="flow" style="margin-top:12px">
+    <span>S1 extract 3–6 claims</span><i>→</i><span>S1g pin to a verbatim article sentence</span><i>→</i>
+    <span>S2 retrieve · normalise · rank · dedupe domains</span><i>→</i><span>S3 stance + quote guard</span><i>→</i>
+    <span>S4/S5 transparent score + report</span>
+  </p>
+  <div class="grid g2" style="margin-top:18px">
+    <div class="card"><h3 style="margin-top:0">Claim side</h3>
+      <ul><li>opinions and predictions excluded, deduped</li>
+      <li>“X said that Y” is checked as <b>Y</b>; the frame is kept for display</li>
+      <li>a claim that cannot be matched to the submitted text is dropped (<code>claims_dropped_ungrounded</code>)</li>
+      <li>time-sensitive claims get a 18-month freshness half-life</li></ul></div>
+    <div class="card"><h3 style="margin-top:0">Evidence side</h3>
+      <ul><li>7 adapters: Wikipedia, OpenAlex, PubMed, DuckDuckGo (keyless) + Tavily, Google Fact Check (keyed) + local corpus</li>
+      <li>each fails soft: a dead source is named in <code>sources_failed</code>, the run continues</li>
+      <li>page text fetched for the top few, so a quote can be checked against more than a snippet</li></ul></div>
+  </div>
+  <div class="notes"><b>notes</b> One HTTP request runs all of it — <code>POST /api/verify</code>.
+    Per-stage status and milliseconds are in the response and on screen, so “which stage was
+    weak?” is never a guess.</div>
+</section>
+
+<section>
+  <h2>The quote guard, in code</h2>
+  <div class="grid g3" style="margin-top:14px">
+    <div class="card"><div class="lbl">1 · at S3</div><pre>def verify_quote(quote, text):
+    q = norm(quote)
+    t = norm(text)
+    return q in t   # else
+                  # dropped_quote = True
+                  # stance = NEUTRAL</pre></div>
+    <div class="card"><div class="lbl">2 · at the scorer</div><pre>used = [i for i in evidence
+        if i.quote_verified
+        and i.quote.strip()]
+dropped = len(evidence) - len(used)
+# only `used` can move a score</pre></div>
+    <div class="card"><div class="lbl">3 · at the article</div><pre>if not grounded(claim,
+                 article_text):
+    drop(claim)
+# never verified against
+# a sentence the article
+# does not contain</pre></div>
+  </div>
+  <p style="margin-top:16px">A hallucinated quote has to survive three independent checks to
+    reach the screen. Snippet-only verification is labelled as the weaker thing it is
+    (<code>quote_scope</code> → chip on the card, warning in the audit, note in the seam report).</p>
+  <div class="notes"><b>notes</b> If a judge asks how we know the guard works: the seam checker
+    counts fabricated quotes (0/10 on the captured snapshot) and the QA runner fails the build if
+    a displayed quote stops appearing in the retrieved text.</div>
+</section>
+
+<section>
+  <h2>One transparent number, and one direction</h2>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card">
+      <pre>S = 0.30·C + 0.30·R + 0.20·A
+    + 0.10·T + 0.10·K
+
+C credibility   weighted by relevance
+R relevance     mean over verified items
+A agreement     |sup−ref| / (sup+ref)
+                × (1 − e^(−n_domains/2))
+T timeliness    from median pub date
+K context       quote read in context,
+                no quantifier gaps
+
+strength = 0.5 + (S − 0.5)·min(1, n/3)
+direction = stance_score ∈ [−1, +1]</pre></div>
+    <div class="card"><h3 style="margin-top:0">Real run, on screen right now</h3>
+      <pre>“The Eiffel Tower is 330 metres tall.”
+ C 0.1000 → 0.0300
+ R 0.9558 → 0.2868
+ A 0.7769 → 0.1554
+ T 0.8233 → 0.0823
+ K 0.8110 → 0.0811
+ S = 0.6356 · shrink 1.0 · direction +1.0
+ → MIXED / PARTIALLY SUPPORTED</pre>
+      <p style="margin-top:10px"><b>C is 0.10 because every source in the offline demo corpus is
+      tagged <code>source_kind=mock</code> and scored 0.10 by design.</b> The screen says so; we
+      did not pad it.</p></div>
+  </div>
+  <div class="notes"><b>notes</b> Two separate gauges: “Stance direction” and “Evidence strength —
+    quality of the evidence, not a probability of truth”. Strong evidence can refute; that
+    sentence is why the two are never multiplied together.</div>
+</section>
+
+<section>
+  <h2>Refusing is a feature</h2>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><h3 style="margin-top:0">Thin-evidence sample, measured</h3>
+      <pre>5 claims · all INSUFFICIENT EVIDENCE
+strength 0.50 (the no-information midpoint)
+S2 retrieval  ● degraded   11 ms
+S3 stance+guard ● degraded   0 ms
+warning: “no source returned usable
+evidence for any claim”</pre>
+      <p style="margin-top:8px">Nothing was invented to fill the gap. The stage chips turn amber
+      and say which stage had nothing to work with.</p></div>
+    <div class="card"><h3 style="margin-top:0">Rules that force it</h3>
+      <ul><li>fewer than 2 independent domains → no decisive verdict</li>
+      <li><code>strength &lt; 0.45</code> → INSUFFICIENT</li>
+      <li>&lt; 3 domains → shrink toward 0.5, so a thin set cannot look confident</li>
+      <li>real two-sided conflict → CONFLICTING EVIDENCE, resolved <i>before</i> the low-score fallback,
+      and both sides stay listed</li></ul></div>
+  </div>
+  <div class="notes"><b>notes</b> This is the slide to show if the live network fails: it needs no
+    retrieval at all, and it demonstrates the honesty claim better than a green verdict would.</div>
+</section>
+
+<section>
+  <h2>What we actually tested</h2>
+  <table style="margin-top:12px">
+    <tr><th>Check</th><th>Command</th><th class="n">Result</th></tr>
+    <tr><td>Whole suite</td><td><code>python -m pytest -q</code></td><td class="n yes">393 passed, exit 0</td></tr>
+    <tr><td>S3 ↔ S2 seam gate</td><td><code>scripts/check_s3_contract.py --analyze s3_analysis:analyze --replay data/demo_snapshot.json</code></td><td class="n yes">compatible · 10/10 items · 0 fabricated quotes</td></tr>
+    <tr><td>Labelled QA set — offline</td><td><code>scripts/run_test_set.py</code></td><td class="n yes">9/9 directions met · 0 invariant violations · 1 unmeasured</td></tr>
+    <tr><td>Same set — real captured sources</td><td><code>run_test_set.py --mode snapshot</code></td><td class="n mm">5/9 met · 0 invariant violations</td></tr>
+    <tr><td>UI renders every state</td><td><code>node scripts/ui_render_check.mjs</code></td><td class="n yes">6 claim cards, 3 evidence cards, audit footer</td></tr>
+    <tr><td>Live end-to-end, no keys</td><td>UI, mode <code>live</code></td><td class="n yes">19 items · 6 domains · 9 verified · 4.3 s</td></tr>
+  </table>
+  <p style="margin-top:14px"><b>9/9 is not “90% accurate”.</b> Ten cases we wrote, against a corpus
+    we wrote, measuring which way quote-verified evidence points. The 5/9 on real captured sources
+    is the same honesty: retrieval noise and a lexical analyser cost us four directions, and the
+    write-up explains each one (<code>docs/TEST_SET.md</code>). No accuracy figure is claimed
+    anywhere in this repo.</p>
+  <div class="notes"><b>notes</b> Say the 5/9 out loud before anyone digs for it. Two of those four
+    are the tool declining (nothing in the snapshot for that domain) rather than being wrong.
+    The invariant count — zero unverified quotes shown, across both runs — is the number that
+    matters, and it is the one a fact-checking tool can be trusted on.</div>
+</section>
+
+<section>
+  <h2>Limits, in our words</h2>
+  <div class="grid g2" style="margin-top:12px">
+    <div class="card"><h3 style="margin-top:0">True today</h3>
+      <ul><li>stance is decided by a deterministic lexical aligner by default; an NLI/cross-encoder
+      model would beat it on paraphrase-heavy text</li>
+      <li>snippet-scope verification is weaker than full page text; only the top few pages are fetched</li>
+      <li>English, text-only: no image/video/meme claims</li>
+      <li>a claim nobody has written about stays INSUFFICIENT — no verdict is available at any price</li></ul></div>
+    <div class="card"><h3 style="margin-top:0">Cut on purpose, in the plan’s order</h3>
+      <ul><li>cross-encoder reranking (hook exists in <code>ranking.py</code>, off by default)</li>
+      <li>Qdrant / persistent vector store</li><li>bootstrap confidence intervals — the score is exact arithmetic instead</li>
+      <li>full-text for every result; extra APIs and LLM query rewrites</li></ul>
+      <p style="margin-top:8px">Nothing in the protected list was cut: end-to-end demo, quote guard,
+      source links, stance/strength separation, breakdown, insufficient state.</p></div>
+  </div>
+  <div class="notes"><b>notes</b> Never present the cut list as “coming soon”. It is the plan’s own
+    cut order, executed deliberately, and each item has a named seam where it would slot in.</div>
+</section>
+
+<section>
+  <h2>Live demo</h2>
+  <p class="lead">1 · <b>Offline, <code>refuted</code></b> — claims pinned to the article, one
+    CONFLICTING verdict, five INSUFFICIENT. (~50 ms)</p>
+  <p class="lead">2 · <b>Offline, <code>thin</code></b> — the honest empty state, degraded stage chips,
+    warnings. (~35 ms)</p>
+  <p class="lead">3 · <b>Live, <code>supported</code></b> — real sources, 6 domains, verified quotes,
+    credibility 0.81–0.85. (~4.3 s)</p>
+  <p class="lead">4 · <b>Audit footer</b> — counters, per-stage milliseconds, mode, analyzer, and the
+    disclaimer. Then the same report as JSON, and <code>docs/SCORING.md</code>.</p>
+  <div class="card" style="margin-top:20px"><h3 style="margin-top:0">If the Wi-Fi dies</h3>
+    <code>mode=snapshot</code> replays captured real pages (labelled <b>DEMO BACKUP</b> on screen),
+    or <code>mode=offline</code> needs nothing at all. Both are one dropdown change; neither is a
+    silent fallback — <code>auto</code> will never quietly swap in the snapshot.</div>
+  <div class="notes"><b>notes</b> Keep the last screen on the claim with a dropped quote and the
+    amber chip; that is the screenshot that sells the project. Close by reading the disclaimer:
+    “Evidence-weighted assessment, not a guaranteed truth verdict.”</div>
+</section>
+
+</div>
+
+<div id="bar"></div>
+<div id="hud"><span id="idx">1</span> / <span id="total">9</span> · ← → · n notes</div>
+
+<script>
+(function () {
+  const slides = [...document.querySelectorAll("section")];
+  const bar = document.getElementById("bar");
+  const idx = document.getElementById("idx");
+  document.getElementById("total").textContent = String(slides.length);
+  let at = Math.min(Math.max(parseInt((location.hash || "#1").slice(1), 10) || 1, 1), slides.length);
+
+  function paint() {
+    slides.forEach((s, i) => s.classList.toggle("on", i === at - 1));
+    idx.textContent = String(at);
+    bar.style.width = (at / slides.length * 100) + "%";
+    location.hash = "#" + at;
+  }
+  function go(delta) { at = Math.min(Math.max(at + delta, 1), slides.length); paint(); }
+
+  addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") { e.preventDefault(); go(1); }
+    else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); go(-1); }
+    else if (e.key === "Home") { at = 1; paint(); }
+    else if (e.key === "End") { at = slides.length; paint(); }
+    else if (e.key.toLowerCase() === "n") { document.body.classList.toggle("notes-on"); }
+    else if (e.key.toLowerCase() === "f") {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen && document.documentElement.requestFullscreen();
+    }
+  });
+  addEventListener("click", (e) => { if (!e.target.closest("a")) go(e.clientX < innerWidth / 2 ? -1 : 1); });
+  paint();
+}());
+</script>
+</body>
+</html>
