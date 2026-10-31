@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from datetime import date
 from enum import Enum
-from typing import Optional
+from typing import Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class Stance(str, Enum):
@@ -27,6 +27,45 @@ class ClaimInput(BaseModel):
     type: str = "other"
     article_quote: Optional[str] = None
     time_sensitive: bool = False
+
+
+class ClaimExtractionRequest(BaseModel):
+    """S1 input: provide exactly one article source."""
+
+    article_text: str | None = Field(default=None, min_length=1, max_length=200_000)
+    url: str | None = Field(default=None, min_length=1, max_length=2_048)
+
+    @model_validator(mode="after")
+    def validate_source(self) -> "ClaimExtractionRequest":
+        if self.article_text is not None and not self.article_text.strip():
+            raise ValueError("article_text must contain non-whitespace text")
+        if self.url is not None and not self.url.strip():
+            raise ValueError("url must contain non-whitespace text")
+        if (self.article_text is None) == (self.url is None):
+            raise ValueError("provide exactly one of article_text or url")
+        if self.article_text is not None:
+            self.article_text = self.article_text.strip()
+        if self.url is not None:
+            self.url = self.url.strip()
+        return self
+
+
+class ExtractedClaim(BaseModel):
+    """S1 output normalized to the API's ``type`` field, with entities kept."""
+
+    id: str = Field(min_length=1)
+    text: str = Field(min_length=1)
+    type: str = Field(min_length=1)
+    entities: list[str] = Field(default_factory=list)
+
+
+class ClaimExtractionResponse(BaseModel):
+    source_type: Literal["article_text", "url"]
+    claims: list[ExtractedClaim]
+    stage: Literal["S1_EXTRACTION_ONLY"] = "S1_EXTRACTION_ONLY"
+    note: str = (
+        "Claim extraction only. No evidence retrieval, stance analysis, or verdict was produced."
+    )
 
 
 class EvidenceItem(BaseModel):
