@@ -1,0 +1,16 @@
+# Normalize text files in Git while keeping binary files untouched.
+* text=auto
+
+# Keep source, config, and documentation line endings stable across platforms.
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.ini text eol=lf
+*.txt text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.sh text eol=lf
