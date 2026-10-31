@@ -133,11 +133,25 @@ def pipeline_config() -> dict[str, Any]:
 
     settings = get_settings()
     snapshot = os.getenv("VERIFY_SNAPSHOT_PATH", "data/demo_snapshot.json")
+    # an empty or "auto" VERIFY_MODE is not a pin — report it the way the pipeline
+    # treats it, so this endpoint never contradicts `_resolve_mode()`
+    pinned = os.getenv("VERIFY_MODE", "").strip().lower()
+    mode = pinned if pinned in ("live", "offline", "snapshot") else "auto"
+    if pinned in ("", "auto"):
+        mode_note = "per request: the mode in the request decides"
+    elif mode != "auto":
+        mode_note = f"pinned by VERIFY_MODE: every request runs as {mode}"
+    else:
+        mode_note = (
+            f"VERIFY_MODE={pinned!r} is not a mode, so it is ignored and each request "
+            "decides for itself"
+        )
     return {
         "s1_provider": settings.llm_provider,
         "s1_fallback_enabled": settings.llm_fallback_to_heuristics,
         "s3_mode": os.getenv("S3_MODE", "auto (lexical fallback)"),
-        "verify_mode": os.getenv("VERIFY_MODE", "auto"),
+        "verify_mode": mode,
+        "verify_mode_note": mode_note,
         "snapshot_available": Path(snapshot).exists(),
         "fact_check_key_configured": bool(os.getenv("GOOGLE_FACTCHECK_API_KEY")),
         "tavily_key_configured": bool(os.getenv("TAVILY_API_KEY")),

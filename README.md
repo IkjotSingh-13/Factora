@@ -18,21 +18,49 @@ What the system guarantees, in one line each:
 
 ## Run it
 
-From the repository root (Windows PowerShell users: `py` instead of `python`):
+One command, from the repository root:
 
 ```bash
-python -m pip install -r requirements.txt
-python -m uvicorn app.main:app --reload --app-dir backend --host 0.0.0.0 --port 8000
+./scripts/bootstrap.sh          # macOS / Linux  → venv, deps, spaCy model, .env, test suite
 ```
 
-Open **`http://localhost:8000/`** for the UI, `/docs` for Swagger, `/health` for a liveness
-check. The UI is one self-contained file (`frontend/index.html`): no build step, no npm, no
-CDN, no external request — it is served by `StaticFiles` and talks only to relative `/api/*`
-paths, so it works offline and on any machine that has the repo.
+```powershell
+.\scripts\bootstrap.ps1        # Windows PowerShell
+```
+
+Then serve it:
+
+```bash
+python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
+```
+
+and open **`http://localhost:8000/`**. `/docs` is Swagger, `/health` is liveness,
+`/api/config` prints what this process will actually do — start there when behaviour and a
+document disagree. `make help` lists every other task (`make run`, `make test`, `make checks`,
+`make connections`, `make qa`). If you would rather install by hand, `pip install -r
+requirements.txt` is enough to run everything except S1's named-entity pass.
+
+`docs/SETUP.md` is the full path from a clean machine, including the optional parts: live
+sources with no keys at all, Google Fact Check / Tavily keys, and a local model through Ollama.
+
+The UI is one self-contained file (`frontend/index.html`): no build step, no npm, no CDN, no
+external request — it is served by `StaticFiles` and talks only to relative `/api/*` paths, so
+it works offline and on any machine that has the repo.
 
 No API keys are needed to run everything except live retrieval: S1 falls back to its
 deterministic extractor and S3 to its lexical analyser, and both fallbacks are *named* in the
 response warnings.
+
+| | |
+| --- | --- |
+| ![idle](docs/screens/01-idle.png) | ![results](docs/screens/02-results.png) |
+| Empty state: what the pipeline will do, before it does it. | A claim card: verdict, verbatim quote, stance vs strength, the arithmetic, then the evidence. |
+
+![one claim card](docs/screens/03-evidence.png)
+
+Where evidence came from a snippet instead of a fetched page, the card says so — snippet-scope
+verification is labelled as the weaker thing it is, and is never shown as a bare "verified".
+Screenshots were captured from a fresh `bootstrap.sh` install, not from a fixture.
 
 ## API
 
@@ -77,8 +105,10 @@ deck.
 ## Checks
 
 ```bash
-python -m pytest -q                                            # 393 tests
+make checks                 # everything below, in order, or run them one at a time:
+python -m pytest -q                                            # 415 tests
 python scripts/doctor.py                                       # env + wiring report
+python scripts/check_connections.py                            # ollama / keys / sources / API
 python scripts/check_s3_contract.py --analyze s3_analysis:analyze \
     --replay data/demo_snapshot.json                           # S3 ↔ S2 seam gate
 python scripts/run_test_set.py                                 # labelled QA set, measured
@@ -93,11 +123,15 @@ analyzer is compatible with the evidence bundle shape, and `run_test_set.py` wri
 re-runs the set and fails if the committed results no longer match, so no documented number can
 drift from the code.
 
-Latest measured state on this checkout: 393 tests pass; seam gate reports "S3 is compatible
+Latest measured state on this checkout: **415 tests pass**; seam gate reports "S3 is compatible
 with the S2 seam" with 10/10 evidence items analysed and 0 fabricated quotes; QA set offline
 **9/9 directions met, 0 invariant violations, 1 case unmeasured**, on captured real sources
-(snapshot) 5/9. Neither number is an accuracy figure — see `docs/TEST_SET.md` for what they do
-and do not mean.
+(snapshot) 5/9; `node scripts/ui_render_check.mjs` and a headless-browser pass over the UI both
+clean (no console errors, no horizontal overflow at 1440 or 390 px, no WCAG contrast failure in
+the palette). The QA set measures 8 cases on a machine that has `en_core_web_sm` installed and 9
+on one that does not, because the real model declines to turn an opinion sentence into a claim —
+both are the correct outcome and `data/test_set_results.json` records the reason. Neither number
+is an accuracy figure — see `docs/TEST_SET.md` for what they do and do not mean.
 
 ## Shared contract
 
@@ -124,8 +158,10 @@ s4/5: backend/app/pipeline/s4_scoring.py, s5_report.py
 glue: backend/app/pipeline/{article_quotes,verify,orchestrator}.py, contract_adapter.py
 ui:   frontend/index.html (one file), scripts/ui_render_check.mjs
 qa:   data/test_set.json, scripts/run_test_set.py, docs/TEST_SET.md
-docs: docs/{ARCHITECTURE,SCORING,DEMO,TEST_SET,PROGRESS,CONTRACT,INTEGRATION,WINDOWS}.md
+setup: scripts/bootstrap.{sh,ps1}, scripts/check_connections.py, scripts/doctor.py, Makefile
+docs: docs/{SETUP,ARCHITECTURE,SCORING,DEMO,TEST_SET,PROGRESS,CONTRACT,INTEGRATION,WINDOWS}.md
 deck: docs/slides.html (self-contained, no build step — open and press →)
+pics: docs/screens/*.png — the UI as it renders, not a mockup
 ```
 
 Dependencies stay where the plan put them: `requirements.txt` pulls in the three stage files

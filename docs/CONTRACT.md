@@ -127,7 +127,7 @@ The pytest problem above was fixed and is no longer a gotcha: the root `pytest.i
 `backend/requirements.txt`, so from a fresh venv with dependencies installed
 
 ```bash
-python -m pytest -q          # 393 tests, exit 0, from the repo root
+python -m pytest -q          # 415 tests, exit 0, from the repo root
 ```
 
 runs everyone's suite in one go. No member needs to run a per-file command any more.

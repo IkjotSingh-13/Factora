@@ -53,6 +53,13 @@ opinion and the factual-only filter removed it) is recorded as **unmeasured**, n
 
 **direction met 9/9 · invariant violations 0 · unmeasured 1**
 
+(On a machine where the real `en_core_web_sm` pipeline is installed — i.e. after
+`scripts/bootstrap.sh` — this reads **8/8 with 2 unmeasured**: the model declines to turn
+the opinion sentence in `unquoteable-claim` into a factual claim, so the runner records the
+case as unmeasured with that reason instead of scoring nothing. Both are the intended
+behaviour, `tests/test_test_set.py` accepts either, and neither is a pass awarded by
+accident.)
+
 The `fabricated-consortium` case is the interesting failure and it is a *good* one: the
 article's checkable-sounding sentences were classified as prediction/opinion, so the only
 claim S1 kept was *"The announcement came from an account with eleven followers."* — which

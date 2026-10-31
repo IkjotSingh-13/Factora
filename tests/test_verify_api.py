@@ -307,3 +307,152 @@ def test_ui_fixture_matches_the_documented_contract() -> None:
     for report in data["report"]["claims"]:
         for item in report["evidence"]:
             assert "quote_scope" in item
+
+
+# ---------------------------------------------------------------------------
+# mode resolution, and the one environment trap that bit a real install
+# ---------------------------------------------------------------------------
+def test_explicit_request_mode_survives_an_auto_environment(monkeypatch) -> None:
+    """``VERIFY_MODE=auto`` used to pin every request to auto.
+
+    A copied ``.env.example`` shipped that line uncommented, so the UI's mode
+    dropdown did nothing for anyone who followed the setup instructions: an
+    ``offline`` request became live retrieval and a ``snapshot`` request stopped
+    being the labelled demo backup. ``auto`` means "decide per request", which is
+    the same as leaving it blank.
+    """
+    from app.pipeline.verify import _resolve_mode
+
+    monkeypatch.setenv("VERIFY_MODE", "auto")
+    assert _resolve_mode("offline") == "offline"
+    assert _resolve_mode("snapshot") == "snapshot"
+    monkeypatch.setenv("VERIFY_MODE", "")
+    assert _resolve_mode("offline") == "offline"
+    assert _resolve_mode("snapshot") == "snapshot"
+
+
+def test_a_pinned_environment_still_overrides_the_request(monkeypatch) -> None:
+    """The pin exists to force a demo offline from the environment; keep it working."""
+    from app.pipeline.verify import _resolve_mode
+
+    for pinned in ("live", "offline", "snapshot"):
+        monkeypatch.setenv("VERIFY_MODE", pinned)
+        assert _resolve_mode("auto") == pinned
+        assert _resolve_mode("live" if pinned != "live" else "offline") == pinned
+
+
+def test_auto_mode_flags_are_only_read_when_nobody_asked(monkeypatch) -> None:
+    from app.pipeline.verify import _resolve_mode
+
+    monkeypatch.delenv("VERIFY_MODE", raising=False)
+    monkeypatch.setenv("VERIFY_OFFLINE", "1")
+    assert _resolve_mode("auto") == "offline"
+    assert _resolve_mode("live") == "live", "an explicit request is not overridden by a flag"
+    monkeypatch.setenv("VERIFY_OFFLINE", "")
+    monkeypatch.setenv("VERIFY_SNAPSHOT_ONLY", "true")
+    assert _resolve_mode("auto") == "snapshot"
+
+
+def test_env_example_ships_no_active_mode_pin() -> None:
+    """The file everyone copies must not change behaviour they did not ask for."""
+    lines = [
+        line.strip()
+        for line in (ROOT / ".env.example").read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.strip().startswith("#")
+    ]
+    pins = [line for line in lines if line.startswith("VERIFY_MODE") and not line.endswith("=")]
+    assert not pins, f".env.example must leave the mode to the request, found {pins}"
+
+
+# ---------------------------------------------------------------------------
+# retrieval knobs advertised by .env.example must be wired, not decorative
+# ---------------------------------------------------------------------------
+def test_s2_tuning_knobs_reach_the_retrieval_config(monkeypatch) -> None:
+    from app.pipeline.verify import _engine_for
+
+    for var, value in (
+        ("S2_TOP_K", "3"),
+        ("S2_PER_SOURCE_LIMIT", "2"),
+        ("S2_MAX_PER_DOMAIN", "1"),
+        ("S2_CACHE_TTL_S", "30"),
+        ("S2_FETCH_FULL_TEXT", "5"),
+    ):
+        monkeypatch.setenv(var, value)
+
+    live = _engine_for("live").config
+    assert (live.top_k, live.per_source_limit, live.max_per_domain) == (3, 2, 1)
+    assert live.cache_ttl_s == 30 and live.fetch_full_text == 5
+
+    offline = _engine_for("offline").config
+    assert (offline.top_k, offline.max_per_domain) == (3, 1)
+    assert offline.fetch_full_text == 0, "the offline corpus has no pages to fetch"
+
+    snapshot = _engine_for("snapshot").config
+    assert snapshot.top_k == 3 and snapshot.fetch_full_text == 0 and not snapshot.use_cache
+
+
+def test_a_bogus_knob_is_dropped_and_named(monkeypatch) -> None:
+    """A typo in `.env` must not silently do nothing, and must not break the run."""
+    from app.pipeline.verify import _engine_for
+
+    monkeypatch.setenv("S2_TOP_K", "lots")
+    monkeypatch.setenv("S2_MAX_PER_DOMAIN", "999")
+    notes: list[str] = []
+    config = _engine_for("live", notes).config
+    assert (config.top_k, config.max_per_domain) == (6, 2), "defaults must survive"
+    assert len(notes) == 2, notes
+    assert all("ignoring" in note for note in notes), notes
+
+
+def test_ignored_knobs_appear_in_the_response_warnings(monkeypatch) -> None:
+    monkeypatch.setenv("S2_TOP_K", "-4")
+    response = client.post("/api/verify", json={"article_text": ARTICLE, "mode": "offline"})
+    assert response.status_code == 200
+    warnings = response.json()["warnings"]
+    assert any("S2_TOP_K" in note and "ignoring" in note for note in warnings), warnings
+
+
+def test_env_example_knobs_are_all_read_by_something() -> None:
+    """No setting may be advertised in `.env.example` that the code never reads."""
+    import re
+
+    from app.pipeline.verify import _S2_INT_KNOBS
+
+    documented = set(
+        re.findall(r"^([A-Z][A-Z0-9_]+)=", (ROOT / ".env.example").read_text(encoding="utf-8"), re.M)
+    )
+    s2_vars = {var for _field, var, _low, _high in _S2_INT_KNOBS} | {
+        "S2_DISK_CACHE_DIR",
+        "S2_FETCH_FULL_TEXT",
+    }
+    assert s2_vars <= documented, f"missing from .env.example: {sorted(s2_vars - documented)}"
+    for var in s2_vars:
+        source = (ROOT / "backend" / "app" / "pipeline" / "verify.py").read_text(encoding="utf-8")
+        assert f'"{var}"' in source, f"{var} is advertised but never read"
+
+
+def test_api_config_describes_the_mode_policy_the_pipeline_actually_uses(monkeypatch) -> None:
+    """/api/config is the "why does it behave like that" endpoint — it must not lie.
+
+    In particular an empty or ``auto`` ``VERIFY_MODE`` (which is what ``.env.example``
+    ships) has to read as "per request", never as a pin, or the file that is supposed to
+    be safe to copy makes the UI dropdown look dead.
+    """
+    monkeypatch.delenv("VERIFY_MODE", raising=False)
+    body = client.get("/api/config").json()
+    assert body["verify_mode"] == "auto" and "per request" in body["verify_mode_note"]
+
+    for harmless in ("", "  ", "auto", "AUTO"):
+        monkeypatch.setenv("VERIFY_MODE", harmless)
+        body = client.get("/api/config").json()
+        assert body["verify_mode"] == "auto", harmless
+        assert "per request" in body["verify_mode_note"], harmless
+
+    monkeypatch.setenv("VERIFY_MODE", "OFFLINE")
+    body = client.get("/api/config").json()
+    assert body["verify_mode"] == "offline" and "pinned" in body["verify_mode_note"]
+
+    monkeypatch.setenv("VERIFY_MODE", "snapsot")
+    body = client.get("/api/config").json()
+    assert body["verify_mode"] == "auto", "a typo must not silently pin the pipeline"
+    assert "not a mode" in body["verify_mode_note"]

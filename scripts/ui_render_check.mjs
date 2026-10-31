@@ -73,7 +73,7 @@ const steps = STAGES.map((stage) => {
 globalThis.document = {
   getElementById: byId,
   createElement: () => element(""),
-  querySelectorAll: (selector) => (selector.includes(".progress .step") ? steps : []),
+  querySelectorAll: (selector) => (selector.includes(".progress li") ? steps : []),
   addEventListener: () => {},
 };
 globalThis.window = globalThis;
@@ -131,7 +131,7 @@ for (const claim of claims) {
   }
 }
 for (const key of ["C", "R", "A", "T", "K"]) {
-  check(results.includes(`>${key}</td>`), `score component ${key} missing from the breakdown`);
+  check(new RegExp(`class="key">${key}</span>`).test(results), `score component ${key} missing from the breakdown`);
 }
 check(audit.includes("Audit trail"), "audit footer not rendered");
 check(audit.includes("quotes dropped by guard") || audit.includes("quote guard"), "quote-guard counters missing from audit");
@@ -227,6 +227,48 @@ check(html.includes("INSUFFICIENT EVIDENCE"), "the insufficient-evidence state i
 const badgeMarkup = [...results.matchAll(/class="[^"]*(?:badge|verdict)[^"]*"[^>]*>([^<]*)</g)].map((m) => m[1].trim());
 check(!badgeMarkup.some((text) => /^(TRUE|FALSE)$/i.test(text)),
   "a verdict chip reads as a bare TRUE/FALSE badge");
+
+/* ---------------------------------------------- the crash this file missed once
+   Clicking a sample button used to call render() with no payload: `data.report`
+   of undefined threw a TypeError in a real browser, while this check stayed green
+   because it only ever called render() with a payload. Guard the shape, not the
+   happy path. */
+// Comment and string-literal aware: this must find a real call statement, and not fire
+// on the guard's own message ("render() requires a /api/verify response") or on prose.
+const code = source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+const codeNoStrings = code
+  .replace(/"(?:[^"\\\n]|\\.)*"/g, '""')
+  .replace(/'(?:[^'\\\n]|\\.)*'/g, "''")
+  .replace(/`(?:[^`\\]|\\.)*`/gs, "``");
+check(!/[^.\w]render\(\s*\)/.test(codeNoStrings),
+  "render() is called without a payload somewhere — clicking a sample did exactly that and threw in a browser");
+check(/render\(data\) requires a \/api\/verify response|if \(!data \|\| !data\.report\)/.test(code),
+  "render() must reject a missing payload instead of throwing on .report");
+check(/function paintEmpty/.test(code), "no empty/starting state to paint");
+check(/class="progress on"|id="progress"[^>]*>/.test(html) && /\.progress li/.test(code),
+  "the pipeline stepper markup and its selector no longer agree");
+
+/* ------------------------------------- accessibility + presentation contracts
+   These are the "not vibecoded" checks: real labels, polite live regions for
+   status, a visible focus style, reduced-motion respect, and a print path —
+   a verification report should be printable without a screenshot tool. */
+check(/<label for="article"/.test(html) && /<label for="mode"/.test(html),
+  "form controls lost their labels");
+check((html.match(/aria-live=/g) || []).length >= 2, "status regions are not announced");
+check(/aria-selected/.test(html) && /role="tab"/.test(html), "the source tabs lost their ARIA state");
+check(/:focus-visible/.test(html), "no visible keyboard focus style");
+check(/prefers-reduced-motion/.test(html), "animations ignore prefers-reduced-motion");
+check(/@media print/.test(html), "the report is not printable");
+check(/@media \(max-width: 720px\)/.test(html), "no narrow-viewport layout");
+check(/\.claim-text \{[^}]*var\(--serif\)/.test(html),
+  "claim text is not set in the serif reading face");
+check(/blockquote\.quote \{[^}]*var\(--serif\)/.test(html),
+  "quoted evidence text is not set in the serif reading face");
+
+/* the stepper must move on real data, not just exist */
+api.paintProgress(payload.stages || []);
+const stepClasses = steps.map((el) => [...el.classList._set].join(" ")).join(" ");
+check(/done/.test(stepClasses), "paintProgress marked no step done — selector mismatch?");
 
 /* error path must be reachable and must not throw */
 api.showError("deliberate failure for the check");

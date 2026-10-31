@@ -3,298 +3,619 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>VerifyAI — evidence, not verdicts</title>
-<!--
-  Zero-build single-page UI (Taranpreet's stage). One file: no bundler, no CDN, no
-  framework, nothing to install. FastAPI serves it at "/" and the app calls the API on
-  the same origin with relative URLs, so it works from the proxy host and from disk.
-
-  Design rules taken from the plan, and the reason each one is here:
-    * no large TRUE/FALSE badge — the honest output is a stance *plus* a strength
-      computed from quote-verified evidence, which a green tick would flatten;
-    * strength and direction are shown as two separate numbers, never merged;
-    * every quote carries the text scope it was verified against;
-    * "insufficient evidence" is a first-class result, not an error state;
-    * the audit footer is always visible, because the audit trail is the product.
--->
+<title>VerifyAI — what the evidence says</title>
+<meta name="description" content="Claims extracted from an article, evidence retrieved from multiple sources, quotes verified verbatim, and a transparent evidence-strength score." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d4ed8'/%3E%3Cpath d='M9 16.5l4.2 4.2L23 11' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
 <style>
-  :root {
-    --bg: #0d1117;
-    --panel: #161b22;
-    --panel-2: #1c2128;
-    --line: #2a3138;
-    --ink: #e6edf3;
-    --muted: #8b98a5;
-    --dim: #6e7b8a;
-    --support: #3fb950;
-    --refute: #f85149;
-    --neutral: #8b98a5;
-    --conflict: #d29922;
-    --accent: #58a6ff;
-    --radius: 10px;
-    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; background: var(--bg); color: var(--ink);
-    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    -webkit-font-smoothing: antialiased;
-  }
-  a { color: var(--accent); text-decoration: none; }
-  a:hover { text-decoration: underline; }
+/* ==========================================================================
+   VerifyAI — one file, no build step, no CDN, no external request.
+   Everything below is a local token system on purpose: one spacing scale,
+   one type scale, one border radius set, one shadow set. The UI must work on
+   a plane and in a bright room, and it must never present a score as a
+   probability of truth — that constraint is visible in the copy, not only in
+   the code (see docs/SCORING.md for the arithmetic this renders).
+   ========================================================================== */
 
-  header {
-    padding: 18px 24px; border-bottom: 1px solid var(--line);
-    display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
-    background: linear-gradient(180deg, #12181f, #0d1117);
-  }
-  header h1 { font-size: 17px; margin: 0; letter-spacing: .2px; }
-  header .tagline { color: var(--muted); font-size: 13px; }
-  header .spacer { flex: 1 1 auto; }
-  header .status { font: 12px/1 var(--mono); color: var(--dim); }
-  header .status.ok { color: var(--support); }
-  header .status.bad { color: var(--refute); }
+:root {
+  /* paper & ink */
+  --paper: #f7f7f4;
+  --surface: #ffffff;
+  --surface-2: #fbfbf9;
+  --ink: #12161c;
+  --ink-2: #39424e;
+  --muted: #616b78;
+  --faint: #646c76;
+  --line: #e6e5e0;
+  --line-strong: #d5d3cc;
 
-  main { display: grid; grid-template-columns: minmax(320px, 420px) minmax(0, 1fr); gap: 20px; padding: 20px 24px 40px; align-items: start; }
-  @media (max-width: 980px) { main { grid-template-columns: 1fr; } }
+  /* one accent, used for action and focus only */
+  --accent: #1d4ed8;
+  --accent-ink: #1a3fae;
+  --accent-soft: #eef2fd;
 
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
-  .card + .card { margin-top: 16px; }
-  .card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin: 0; padding: 12px 14px; border-bottom: 1px solid var(--line); }
-  .card .body { padding: 14px; }
+  /* semantics — verdict colours are meaningful, not decorative */
+  --support: #166534;      --support-soft: #edf6ef;   --support-line: #cfe4d4;
+  --refute: #b42318;       --refute-soft: #fdf0ee;    --refute-line: #f2d4cf;
+  --mixed: #9a5b06;        --mixed-soft: #fdf6e9;     --mixed-line: #eddcbc;
+  --none: #4b5563;         --none-soft: #f3f4f6;      --none-line: #dcdfe4;
 
-  textarea {
-    width: 100%; min-height: 210px; resize: vertical; background: var(--panel-2);
-    color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
-    font: 13px/1.5 var(--mono);
-  }
-  textarea:focus, input:focus, select:focus { outline: 1px solid var(--accent); border-color: var(--accent); }
-  input[type=text], select {
-    width: 100%; background: var(--panel-2); color: var(--ink); border: 1px solid var(--line);
-    border-radius: 8px; padding: 9px 11px; font: 13px/1.4 var(--mono);
-  }
-  label.field { display: block; margin-top: 12px; }
-  label.field > span { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+  /* type */
+  --serif: "Iowan Old Style", "Charter", "Source Serif 4", Georgia, "Times New Roman", serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 
-  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-  button {
-    font: inherit; cursor: pointer; border-radius: 8px; padding: 9px 15px;
-    border: 1px solid var(--line); background: var(--panel-2); color: var(--ink);
-  }
-  button:hover { border-color: var(--accent); }
-  button.primary { background: #1f6feb; border-color: #1f6feb; color: #fff; font-weight: 600; }
-  button.primary:hover { background: #388bfd; }
-  button.primary:disabled { opacity: .55; cursor: progress; }
-  button.mini { padding: 5px 9px; font-size: 12px; }
+  /* rhythm */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px;
+  --r-sm: 6px; --r: 10px; --r-lg: 14px; --r-pill: 999px;
+  --sh-1: 0 1px 2px rgba(18, 22, 28, .05);
+  --sh-2: 0 1px 2px rgba(18, 22, 28, .05), 0 10px 26px -18px rgba(18, 22, 28, .28);
+  --sh-3: 0 2px 6px rgba(18, 22, 28, .06), 0 22px 48px -26px rgba(18, 22, 28, .35);
+  --bar: 56px;
+}
 
-  .samples { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-  .samples button { font-size: 12px; padding: 5px 9px; color: var(--muted); }
-  .samples button:hover { color: var(--ink); }
+* { box-sizing: border-box }
+html { -webkit-text-size-adjust: 100% }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 15px/1.55 var(--sans);
+  font-feature-settings: "kern" 1, "liga" 1, "cv11" 1;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+}
+h1, h2, h3, h4, p, figure, blockquote { margin: 0 }
+a { color: var(--accent-ink); text-decoration: none; text-underline-offset: 2px }
+a:hover { text-decoration: underline }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px }
+::selection { background: #dbe4fb }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums }
+.muted { color: var(--muted) }
+.micro {
+  font: 500 11px/1.2 var(--sans); letter-spacing: .07em; text-transform: uppercase;
+  color: var(--faint);
+}
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -.01em }
 
-  .hint { color: var(--dim); font-size: 12px; margin-top: 10px; }
+/* ----------------------------------------------------------------- app bar */
+.appbar {
+  position: sticky; top: 0; z-index: 30; height: var(--bar); max-width: 100vw;
+  display: flex; align-items: center; gap: var(--s4);
+  padding: 0 clamp(var(--s4), 3vw, var(--s7));
+  /* Deliberately opaque: a frosted bar over scrolling prose reads as a rendering
+     defect, and it drops the blur entirely on browsers that skip backdrop-filter.
+     The separation comes from the rule and the shadow, which always render. */
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 1px 0 rgba(16, 20, 28, .02), 0 8px 18px -14px rgba(16, 20, 28, .18);
+}
+/* anything scrolled into view has to clear the sticky bar */
+#summary, #results, .card.claim { scroll-margin-top: calc(var(--bar) + var(--s4)) }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -.01em; font-size: 15.5px }
+.mark { width: 22px; height: 22px; border-radius: 6px; background: var(--accent); display: grid; place-items: center; flex: none }
+.mark svg { width: 13px; height: 13px; display: block }
+.tagline {
+  color: var(--muted); font-size: 13px; padding-left: var(--s4);
+  border-left: 1px solid var(--line-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.appbar .spacer { flex: 1 }
+.status {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 11px 5px 9px; border: 1px solid var(--line-strong); border-radius: var(--r-pill);
+  background: var(--surface); font-size: 12px; color: var(--ink-2); max-width: 100%;
+  overflow: hidden;
+}
+.status > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0 }
+.status i { width: 7px; height: 7px; border-radius: 50%; background: var(--support); flex: none; box-shadow: 0 0 0 3px rgba(22,101,52,.12) }
+.status.bad i { background: var(--refute); box-shadow: 0 0 0 3px rgba(180,35,24,.12) }
+.status.load i { background: var(--mixed); box-shadow: 0 0 0 3px rgba(154,91,6,.14); animation: pulse 1.1s ease-in-out infinite }
+@keyframes pulse { 50% { opacity: .35 } }
 
-  /* progress */
-  .progress { display: none; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
-  .progress.on { display: flex; }
-  .step { font: 11px/1 var(--mono); color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; }
-  .step.active { color: var(--accent); border-color: var(--accent); }
-  .step.done { color: var(--support); border-color: #1d4228; }
-  .spinner { width: 11px; height: 11px; border: 2px solid var(--accent); border-top-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; display: inline-block; vertical-align: -1px; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+/* -------------------------------------------------------------------- grid */
+.shell {
+  max-width: 1320px; margin: 0 auto; padding: var(--s6) clamp(var(--s4), 3vw, var(--s7)) var(--s8);
+  display: grid; grid-template-columns: 372px minmax(0, 1fr); gap: var(--s6); align-items: start;
+}
+.rail { display: grid; gap: var(--s5); position: sticky; top: calc(var(--bar) + var(--s5)) }
+.stage { display: grid; gap: var(--s5); min-width: 0 }
 
-  .empty, .error { padding: 26px 20px; color: var(--muted); }
-  .error { color: #ff9d96; background: #2a1416; border: 1px solid #5c2b28; border-radius: var(--radius); margin-bottom: 16px; }
-  .error strong { color: #ff9d96; display: block; margin-bottom: 4px; }
+/* ------------------------------------------------------------------ panels */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--sh-1) }
+.panel > header, .panel > .phead {
+  display: flex; align-items: baseline; gap: var(--s2); padding: var(--s4) var(--s5);
+  border-bottom: 1px solid var(--line);
+}
+.panel .pbody { padding: var(--s5) }
+.step-index { font: 600 11px/1 var(--mono); color: var(--faint); letter-spacing: .04em }
 
-  /* claim cards */
-  .claim { padding: 0; overflow: hidden; }
-  .claim-head { padding: 14px 16px 12px; }
-  .claim-text { font-size: 15.5px; font-weight: 600; line-height: 1.45; }
-  .quote {
-    margin: 10px 0 0; padding: 9px 12px; border-left: 3px solid var(--line);
-    background: var(--panel-2); border-radius: 0 6px 6px 0; color: #c3ccd6; font-size: 13px;
-  }
-  .quote .label { display: block; font: 10px/1 var(--mono); text-transform: uppercase; letter-spacing: .7px; color: var(--dim); margin-bottom: 5px; }
-  .quote.missing { border-left-color: #6e4b12; color: var(--muted); font-style: italic; }
+/* ---------------------------------------------------------------- controls */
+.tabs { display: flex; gap: 2px; padding: 3px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r); margin-bottom: var(--s4) }
+.tabs button {
+  flex: 1; appearance: none; border: 0; background: transparent; color: var(--muted);
+  font: 500 13px/1 var(--sans); padding: 8px 10px; border-radius: 7px; cursor: pointer;
+  transition: color .12s ease, background .12s ease, box-shadow .12s ease;
+}
+.tabs button:hover { color: var(--ink) }
+.tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: var(--sh-1), 0 0 0 1px var(--line) }
 
-  .meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 11px; }
-  .chip { font: 11px/1 var(--mono); padding: 5px 8px; border-radius: 6px; border: 1px solid var(--line); color: var(--muted); }
-  .chip.verdict { font-weight: 700; letter-spacing: .3px; }
-  .v-supported { color: var(--support); border-color: #1d4228; background: #10241a; }
-  .v-refuted { color: var(--refute); border-color: #58211f; background: #26100f; }
-  .v-conflicting { color: var(--conflict); border-color: #4d3a10; background: #211a09; }
-  .v-insufficient { color: var(--muted); border-color: var(--line); background: var(--panel-2); }
-  .v-mixed { color: #a5d6ff; border-color: #24405c; background: #0f1e2d; }
-  .chip.type { text-transform: capitalize; }
+textarea, input[type=text] {
+  width: 100%; font: 14px/1.6 var(--sans); color: var(--ink);
+  background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: var(--r);
+  padding: var(--s3) var(--s4); transition: border-color .12s ease, background .12s ease, box-shadow .12s ease;
+}
+textarea { min-height: 196px; resize: vertical }
+textarea:hover, input[type=text]:hover { background: var(--surface) }
+textarea:focus, input[type=text]:focus { outline: none; background: var(--surface); border-color: var(--accent); box-shadow: 0 0 0 3px rgba(29,78,216,.13) }
+textarea::placeholder { color: var(--faint) }
 
-  .scores { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 14px; padding: 12px 16px 16px; border-top: 1px solid var(--line); background: #12171d; }
-  .gauge { font-size: 12px; color: var(--muted); }
-  .gauge .num { font: 600 15px/1 var(--mono); color: var(--ink); }
-  .bar { height: 6px; border-radius: 999px; background: #232b34; overflow: hidden; margin-top: 7px; position: relative; }
-  .bar > i { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
-  .bar.split { display: flex; }
-  .bar.split > .neg { background: var(--refute); }
-  .bar.split > .pos { background: var(--support); }
-  .bar.split > .mid { background: #232b34; flex: 1 1 auto; }
-  .components { margin-top: 4px; }
-  .components table { border-collapse: collapse; width: 100%; font: 11.5px/1.5 var(--mono); }
-  .components th { text-align: left; color: var(--dim); font-weight: 400; padding: 2px 6px 2px 0; }
-  .components td { padding: 2px 6px 2px 0; color: var(--muted); }
-  .components td.k { color: var(--ink); }
-  .cbits { height: 4px; border-radius: 2px; background: #232b34; width: 100%; margin-top: 3px; }
-  .cbits > i { display: block; height: 100%; border-radius: 2px; }
+.field { display: grid; gap: var(--s2); margin-top: var(--s4) }
+.field > label { font: 500 12px/1.3 var(--sans); color: var(--ink-2); letter-spacing: .01em }
+.selwrap { position: relative }
+.selwrap::after {
+  content: ""; position: absolute; right: 13px; top: 50%; width: 7px; height: 7px; pointer-events: none;
+  border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted);
+  transform: translateY(-70%) rotate(45deg);
+}
+select {
+  appearance: none; width: 100%; font: 500 13.5px/1 var(--sans); color: var(--ink);
+  background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: var(--r);
+  padding: 11px 34px 11px var(--s3); cursor: pointer; transition: border-color .12s ease, background .12s ease;
+}
+select:hover { background: var(--surface) }
+select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(29,78,216,.13) }
+.modehelp { font-size: 12.5px; color: var(--muted); min-height: 2.4em }
+.modehelp b { color: var(--ink-2); font-weight: 600 }
 
-  /* evidence */
-  .evidence { padding: 4px 16px 16px; }
-  .evidence h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin: 14px 0 8px; font-weight: 600; }
-  .ev { border: 1px solid var(--line); border-radius: 8px; margin-bottom: 9px; background: var(--panel-2); }
-  .ev-top { display: flex; gap: 9px; align-items: center; padding: 9px 11px; flex-wrap: wrap; }
-  .stance { font: 11px/1 var(--mono); font-weight: 700; padding: 4px 7px; border-radius: 5px; letter-spacing: .4px; }
-  .s-SUPPORTS { color: var(--support); background: #10241a; border: 1px solid #1d4228; }
-  .s-REFUTES { color: var(--refute); background: #26100f; border: 1px solid #58211f; }
-  .s-NEUTRAL { color: var(--neutral); background: #1a2028; border: 1px solid var(--line); }
-  .src { font-size: 12.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  .src .dom { color: var(--dim); font: 11px/1 var(--mono); }
-  .ev .quote { margin: 0 11px 9px; background: #12171d; }
-  .ev .rationale { padding: 0 11px 9px; color: var(--muted); font-size: 12.5px; }
-  .ev-foot { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 0 11px 10px; font: 11px/1 var(--mono); color: var(--dim); }
-  .scope { padding: 3px 6px; border-radius: 4px; border: 1px solid var(--line); }
-  .scope.full { color: var(--support); border-color: #1d4228; }
-  .scope.snip { color: var(--conflict); border-color: #4d3a10; }
-  .scope.none { color: var(--refute); border-color: #58211f; }
+.actions { display: flex; gap: var(--s2); margin-top: var(--s4) }
+button.primary, button.ghost, button.mini {
+  appearance: none; cursor: pointer; font: 600 14px/1 var(--sans);
+  padding: 11px 18px; border-radius: var(--r); transition: background .12s ease, border-color .12s ease, color .12s ease, box-shadow .12s ease, transform .06s ease;
+}
+button.primary { background: var(--accent); color: #fff; border: 1px solid var(--accent); box-shadow: 0 1px 2px rgba(18,22,28,.14) }
+button.primary:hover:not(:disabled) { background: #1a44bd }
+button.primary:active:not(:disabled) { transform: translateY(1px) }
+button.primary:disabled { background: #9fb0dd; border-color: #9fb0dd; cursor: progress; box-shadow: none }
+button.ghost { background: var(--surface); color: var(--ink-2); border: 1px solid var(--line-strong) }
+button.ghost:hover { background: var(--surface-2); color: var(--ink) }
+button.mini { padding: 6px 10px; font: 500 12px/1 var(--sans); color: var(--muted); background: transparent; border: 1px solid var(--line-strong); border-radius: var(--r-pill) }
+button.mini:hover { color: var(--ink); background: var(--surface-2); border-color: var(--line-strong) }
+.kbd { font: 500 10.5px/1 var(--mono); color: var(--faint); border: 1px solid var(--line-strong); border-bottom-width: 2px; border-radius: 5px; padding: 3px 5px; background: var(--surface-2) }
 
-  .insufficient-note { padding: 11px 16px 15px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); background: #12171d; }
-  .insufficient-note strong { color: #d8e0e8; }
+/* ------------------------------------------------------------------ samples */
+.samples { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: var(--s4) }
+.samples:empty { display: none }
+.samples button { text-align: left; padding: 8px 10px; font-size: 12.5px; line-height: 1.35; white-space: normal; border-radius: 8px }
+.note { font-size: 12.5px; color: var(--muted); margin-top: var(--s3) }
 
-  /* audit */
-  .audit { font: 12px/1.6 var(--mono); color: var(--muted); }
-  .audit .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-  .audit .k { color: var(--dim); display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .6px; }
-  .audit .v { color: var(--ink); }
-  .stages { list-style: none; margin: 12px 0 0; padding: 0; }
-  .stages li { display: flex; gap: 10px; align-items: baseline; padding: 5px 0; border-top: 1px dashed #1e252c; }
-  .stages li:first-child { border-top: 0; }
-  .stages .name { flex: 1 1 auto; color: var(--ink); }
-  .stages .ms { color: var(--dim); }
-  .st-ok { color: var(--support); }
-  .st-degraded { color: var(--conflict); }
-  .st-failed, .st-skipped { color: var(--refute); }
-  .warn { background: #1d1608; border: 1px solid #4d3a10; color: #e3b341; padding: 9px 11px; border-radius: 7px; margin-top: 8px; font: 12.5px/1.5 var(--mono); }
-  .disclaimer { margin-top: 12px; color: var(--dim); font-size: 12px; font-style: italic; }
-  .banner { display: none; margin: 0 0 16px; padding: 10px 13px; border-radius: 8px; background: #0f1e2d; border: 1px solid #24405c; color: #a5d6ff; font-size: 13px; }
-  .banner.on { display: block; }
-  .banner.backup { background: #211a09; border-color: #4d3a10; color: #e3b341; }
-  .muted { color: var(--dim); }
-  .toggle { font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
-  .toggle input { width: auto; }
+/* ---------------------------------------------------------------- progress */
+.progress { display: none }
+.progress.on { display: block }
+.progress ol { list-style: none; margin: var(--s4) 0 0; padding: 0; display: grid; gap: 1px; background: var(--line); border-radius: var(--r); overflow: hidden; border: 1px solid var(--line) }
+.progress li {
+  display: flex; align-items: center; gap: var(--s3); background: var(--surface-2);
+  padding: 9px var(--s3); font-size: 12.5px; color: var(--muted); font-family: var(--sans);
+}
+.progress li .dot { width: 14px; height: 14px; border-radius: 50%; flex: none; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--line-strong); font: 600 9px/1 var(--mono); color: var(--faint) }
+.progress li .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.progress li .ms { font: 500 11px/1 var(--mono); color: var(--faint) }
+.progress li.done { color: var(--ink-2) }
+.progress li.done .dot { background: var(--support); border-color: var(--support); color: #fff }
+.progress li.active { background: var(--accent-soft); color: var(--ink) }
+.progress li.active .dot { border-color: var(--accent); color: var(--accent) }
+.progress li.active .dot::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1s ease-in-out infinite }
+.progress li.st-degraded { background: var(--mixed-soft) }
+.progress li.st-degraded .dot { background: var(--mixed); border-color: var(--mixed); color: #fff }
+.progress li.st-failed { background: var(--refute-soft) }
+.progress li.st-failed .dot { background: var(--refute); border-color: var(--refute); color: #fff }
+.elapsed { margin-top: var(--s3); font: 500 11.5px/1 var(--mono); color: var(--faint); text-align: right }
+@keyframes spin { to { transform: rotate(360deg) } }
+.spinner { width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid currentColor; border-top-color: transparent; display: inline-block; animation: spin .7s linear infinite }
+
+/* ------------------------------------------------------------ report head */
+.banner { display: none }
+.banner.on {
+  display: block; padding: var(--s4) var(--s5); border-radius: var(--r-lg);
+  border: 1px solid var(--line); background: var(--surface); box-shadow: var(--sh-1);
+  font-size: 14px; color: var(--ink-2);
+}
+.banner strong { color: var(--ink); font-weight: 600 }
+.banner.backup.on { background: var(--mixed-soft); border-color: var(--mixed-line); color: #6c4408 }
+.banner.backup.on strong { color: #5b3a06 }
+
+.toolbar { display: flex; align-items: flex-end; gap: var(--s4); flex-wrap: wrap; padding-bottom: var(--s2) }
+.toolbar h1 { font: 600 21px/1.2 var(--sans); letter-spacing: -.015em }
+.toolbar .sub { font-size: 13px; color: var(--muted); margin-top: 3px }
+.toolbar .tools { margin-left: auto; display: flex; gap: 6px }
+.distro { display: flex; align-items: center; gap: var(--s4); flex-wrap: wrap; padding: var(--s3) 0 0 }
+.distro .track { height: 6px; width: 190px; border-radius: var(--r-pill); background: var(--none-line); overflow: hidden; display: flex }
+.distro .track i { display: block; height: 100% }
+.distro .legend { display: flex; gap: var(--s4); flex-wrap: wrap; font-size: 12.5px; color: var(--muted) }
+.distro .legend span { display: inline-flex; align-items: center; gap: 6px }
+.distro .legend b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums }
+.distro .swatch { width: 8px; height: 8px; border-radius: 2px; flex: none }
+.metachips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: var(--s2) }
+
+/* -------------------------------------------------------------------- chips */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: var(--r-pill);
+  border: 1px solid var(--line-strong); background: var(--surface); color: var(--muted);
+  font: 500 11.5px/1.3 var(--sans); white-space: nowrap;
+}
+.chip.verdict { color: #fff; border-color: transparent; font-weight: 600; letter-spacing: .005em }
+.chip.verdict.v-support { background: var(--support) }
+.chip.verdict.v-refute { background: var(--refute) }
+.chip.verdict.v-mixed { background: var(--mixed) }
+.chip.verdict.v-insufficient { background: var(--none) }
+.chip.type { font-family: var(--mono); font-size: 10.5px; text-transform: lowercase; letter-spacing: 0 }
+.chip.ghost { background: transparent }
+
+/* ----------------------------------------------------------------- the card */
+.claim {
+  position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
+  box-shadow: var(--sh-1); overflow: hidden; transition: box-shadow .16s ease, border-color .16s ease;
+}
+.claim:hover { box-shadow: var(--sh-2) }
+.claim::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--none) }
+.claim[data-v="SUPPORTED"]::before { background: var(--support) }
+.claim[data-v="REFUTED"]::before { background: var(--refute) }
+.claim[data-v="MIXED / PARTIALLY SUPPORTED"]::before, .claim[data-v="CONFLICTING EVIDENCE"]::before { background: var(--mixed) }
+.claim-head { padding: var(--s5) var(--s5) var(--s4) }
+.claim-top { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s3); flex-wrap: wrap }
+.claim-id { font: 600 11px/1 var(--mono); color: var(--faint); letter-spacing: .06em }
+.claim-text { font: 400 19px/1.4 var(--serif); color: var(--ink); letter-spacing: -.005em; max-width: 68ch }
+.claim-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: var(--s4) }
+.claim-meaning { font-size: 13px; color: var(--muted); margin-top: var(--s3); max-width: 74ch }
+
+blockquote.quote {
+  position: relative; margin: var(--s4) 0 0; padding: var(--s3) var(--s4); background: var(--surface-2);
+  border: 1px solid var(--line); border-left: 2px solid var(--line-strong); border-radius: 0 var(--r) var(--r) 0;
+  font: 400 15px/1.55 var(--serif); color: var(--ink-2);
+}
+blockquote.quote .label { display: block; margin-bottom: 5px; font: 500 10.5px/1 var(--sans); letter-spacing: .07em; text-transform: uppercase; color: var(--faint) }
+blockquote.quote.missing { border-left-color: var(--mixed); background: var(--mixed-soft); border-color: var(--mixed-line); font-family: var(--sans); font-size: 13.5px }
+
+/* gauges + breakdown */
+.claim-metrics { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.15fr); gap: var(--s5); padding: var(--s4) var(--s5) var(--s5); border-top: 1px solid var(--line); background: linear-gradient(var(--surface-2), var(--surface)) }
+.gauge { display: grid; gap: 7px }
+.gauge + .gauge { margin-top: var(--s4) }
+.gauge .ghead { display: flex; align-items: baseline; gap: var(--s2) }
+.gauge .glabel { font: 500 12px/1 var(--sans); color: var(--ink-2) }
+.gauge .gval { margin-left: auto; font: 600 15px/1 var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -.02em }
+.bar { position: relative; height: 6px; border-radius: var(--r-pill); background: var(--line); overflow: hidden }
+.bar > i { position: absolute; inset: 0 auto 0 0; border-radius: var(--r-pill); background: var(--accent); transition: width .3s cubic-bezier(.2,.7,.3,1) }
+.bar .mid { position: absolute; top: -3px; bottom: -3px; left: 50%; width: 1px; background: var(--line-strong) }
+.bar .fill { position: absolute; top: 0; bottom: 0; border-radius: var(--r-pill) }
+.ghint { font-size: 11.5px; color: var(--faint); line-height: 1.4 }
+.ledger { margin-top: var(--s4); border-top: 1px dashed var(--line); padding-top: var(--s3); display: grid; gap: 5px }
+.ledger div { display: flex; align-items: baseline; gap: var(--s3); font-size: 12px; color: var(--muted) }
+.ledger .lv { margin-left: auto; font: 600 12px/1 var(--mono); color: var(--ink-2); font-variant-numeric: tabular-nums }
+.ledger .flag { color: var(--mixed) }
+
+.components table { width: 100%; border-collapse: collapse }
+.components td { padding: 6px 0; border: 0; vertical-align: middle }
+.components td.k { width: 24px }
+.components .key {
+  display: grid; place-items: center; width: 20px; height: 20px; border-radius: 5px;
+  background: var(--surface); border: 1px solid var(--line-strong); color: var(--ink-2);
+  font: 600 11px/1 var(--mono);
+}
+.components .what { font-size: 12.5px; color: var(--ink-2); padding-right: var(--s3) }
+.components .what .w { color: var(--faint); font-family: var(--mono); font-size: 11px }
+.components .cbits { height: 5px; border-radius: var(--r-pill); background: var(--line); overflow: hidden; margin-top: 4px }
+.components .cbits i { display: block; height: 100%; border-radius: var(--r-pill); transition: width .3s ease }
+.components td.v { text-align: right; font: 500 12.5px/1 var(--mono); color: var(--ink); white-space: nowrap; padding-left: var(--s3) }
+.formula { margin-top: var(--s3); font: 11.5px/1.55 var(--mono); color: var(--muted); letter-spacing: -.01em }
+.formula strong { color: var(--ink); font-weight: 600 }
+
+/* -------------------------------------------------------------- evidence */
+.evidence { padding: 0 var(--s5) var(--s5) }
+.evidence > h3 { display: flex; align-items: center; gap: var(--s3); font: 500 12px/1 var(--sans); letter-spacing: .07em; text-transform: uppercase; color: var(--faint); padding: var(--s2) 0 var(--s3) }
+.evidence > h3::after { content: ""; flex: 1; height: 1px; background: var(--line) }
+.excluded { margin-top: var(--s4); padding-top: var(--s3); border-top: 1px dashed var(--line) }
+.excluded > .micro { color: var(--refute); margin-bottom: var(--s2) }
+.excluded .ev { background: var(--surface-2); border-style: dashed; opacity: .92 }
+.excluded .ev .src a { color: var(--muted) }
+.ev { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); padding: var(--s4); display: grid; gap: var(--s3); transition: border-color .12s ease }
+.ev + .ev { margin-top: var(--s3) }
+.ev:hover { border-color: var(--line-strong) }
+.ev-top { display: flex; align-items: flex-start; gap: var(--s3) }
+.avatar { width: 26px; height: 26px; border-radius: 6px; flex: none; display: grid; place-items: center; background: var(--surface-2); border: 1px solid var(--line-strong); color: var(--ink-2); font: 600 11px/1 var(--mono); text-transform: uppercase }
+.src { min-width: 0; flex: 1 }
+.src a { font-weight: 600; font-size: 13.5px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical }
+.src a:hover { color: var(--accent-ink) }
+.dom { font-size: 11.5px; color: var(--faint); font-family: var(--mono) }
+.stance { font: 600 10.5px/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; padding: 5px 8px; border-radius: var(--r-sm); white-space: nowrap; border: 1px solid transparent }
+.stance.s-SUPPORTS { color: var(--support); background: var(--support-soft); border-color: var(--support-line) }
+.stance.s-REFUTES { color: var(--refute); background: var(--refute-soft); border-color: var(--refute-line) }
+.stance.s-NEUTRAL { color: var(--none); background: var(--none-soft); border-color: var(--none-line) }
+.ev blockquote.quote { margin: 0 }
+.rationale { font-size: 13px; color: var(--muted); line-height: 1.5 }
+.ev-foot { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; font: 500 11px/1.3 var(--mono); color: var(--faint); border-top: 1px dashed var(--line); padding-top: var(--s3) }
+.ev-foot > * { display: inline-flex; align-items: center; gap: 5px }
+.ev-foot .sep { width: 3px; height: 3px; border-radius: 50%; background: var(--line-strong) }
+.scope { padding: 4px 8px; border-radius: var(--r-sm); font: 600 10.5px/1.2 var(--sans); letter-spacing: .02em; text-transform: none }
+.scope.full { color: var(--support); background: var(--support-soft); border: 1px solid var(--support-line) }
+.scope.snip { color: var(--mixed); background: var(--mixed-soft); border: 1px solid var(--mixed-line) }
+.scope.none { color: var(--refute); background: var(--refute-soft); border: 1px solid var(--refute-line) }
+.hint { font-size: 12.5px; color: var(--muted); margin-top: var(--s3); padding-left: 12px; border-left: 2px solid var(--line-strong) }
+
+.callout { margin: 0 var(--s5) var(--s5); padding: var(--s4); border-radius: var(--r); background: var(--none-soft); border: 1px solid var(--none-line); font-size: 13.5px; color: var(--ink-2); line-height: 1.5 }
+.callout strong { display: block; color: var(--ink); font-weight: 600; margin-bottom: 3px }
+.callout.conflict { background: var(--mixed-soft); border-color: var(--mixed-line) }
+.srcnames { font-family: var(--mono); font-size: 12px; color: var(--muted) }
+
+/* --------------------------------------------------------- warnings & err */
+.warn {
+  display: flex; gap: var(--s3); padding: var(--s3) var(--s4); border-radius: var(--r);
+  background: var(--mixed-soft); border: 1px solid var(--mixed-line); color: #6c4408; font-size: 13px; line-height: 1.5;
+}
+.warn + .warn { margin-top: var(--s2) }
+.warn::before { content: "!"; flex: none; width: 16px; height: 16px; border-radius: 50%; background: var(--mixed); color: #fff; font: 700 11px/16px var(--sans); text-align: center }
+.warn.info { background: var(--accent-soft); border-color: #d3ddf9; color: var(--accent-ink) }
+.warn.info::before { background: var(--accent); content: "i" }
+.error { padding: var(--s4) var(--s5); border-radius: var(--r-lg); background: var(--refute-soft); border: 1px solid var(--refute-line); color: #7a1b12; font-size: 14px }
+.error strong { display: block; color: var(--refute); font-weight: 600; margin-bottom: 4px }
+.error .next { color: var(--ink-2); font-size: 13px; margin-top: var(--s2) }
+
+/* ------------------------------------------------------------------- audit */
+.audit .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden }
+.audit .grid > div { background: var(--surface-2); padding: var(--s3) var(--s4); display: grid; gap: 4px }
+.audit .k { font: 500 11px/1.3 var(--sans); color: var(--faint); letter-spacing: .03em }
+.audit .v { font: 600 15px/1.2 var(--mono); color: var(--ink); letter-spacing: -.02em; overflow-wrap: anywhere }
+.audit .stage { margin-top: var(--s4); display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden }
+.audit .stage > div { display: flex; align-items: center; gap: var(--s3); background: var(--surface); padding: 8px var(--s4); font-size: 12.5px }
+.audit .stage .name { flex: 1; color: var(--ink-2); min-width: 0 }
+.audit .stage .detail { color: var(--faint) }
+.audit .stage .ms { font: 500 11.5px/1 var(--mono); color: var(--muted) }
+.audit .stage .d { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--support) }
+.audit .stage .d-s-degraded { background: var(--mixed) }
+.audit .stage .d-s-failed { background: var(--refute) }
+.audit .stage .d-s-skipped { background: var(--line-strong) }
+.disclaimer { margin-top: var(--s4); padding-top: var(--s4); border-top: 1px solid var(--line); font-size: 12.5px; color: var(--muted); line-height: 1.55 }
+.disclaimer strong { color: var(--ink-2) }
+
+/* ------------------------------------------------------------- empty state */
+.empty-state { display: grid; gap: var(--s5); padding: var(--s7) var(--s6); text-align: center; justify-items: center }
+.empty-state .fig { width: min(430px, 100%) }
+.empty-state h2 { font: 600 20px/1.25 var(--sans); letter-spacing: -.015em; max-width: 34ch }
+.empty-state p { font-size: 14px; color: var(--muted); max-width: 52ch; line-height: 1.6 }
+.empty-state .flow { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; justify-content: center; font: 500 11.5px/1 var(--mono); color: var(--muted) }
+.empty-state .flow span { border: 1px solid var(--line-strong); background: var(--surface-2); border-radius: var(--r-pill); padding: 6px 10px }
+.empty-state .flow em { color: var(--faint); font-style: normal }
+.empty { padding: var(--s6); text-align: center; color: var(--muted); font-size: 14px }
+
+.skeleton { display: grid; gap: var(--s4) }
+.sk { height: 132px; border-radius: var(--r-lg); border: 1px solid var(--line); background:
+  linear-gradient(90deg, var(--surface-2) 0%, #f1f1ee 40%, var(--surface-2) 80%) background-size: 300% 100%;
+  animation: shimmer 1.3s linear infinite }
+.sk.tall { height: 196px }
+@keyframes shimmer { to { background-position: -300% 0 } }
+
+/* -------------------------------------------------------------- how to read */
+.howto ol { margin: 0; padding-left: 20px; display: grid; gap: var(--s3); font-size: 13.5px; color: var(--ink-2); line-height: 1.55 }
+.howto ol li::marker { color: var(--faint); font-family: var(--mono); font-size: 12px }
+.howto b { font-weight: 600; color: var(--ink) }
+
+/* ---------------------------------------------------------------- responsive */
+@media (max-width: 1120px) {
+  .shell { grid-template-columns: minmax(0, 1fr) }
+  .rail { position: static }
+  .claim-metrics { grid-template-columns: minmax(0, 1fr) }
+}
+@media (max-width: 720px) {
+  :root { --bar: 52px }
+  .tagline { display: none }
+  .shell { padding-top: var(--s4); gap: var(--s4) }
+  .samples { grid-template-columns: minmax(0,1fr) }
+  .claim-head, .claim-metrics, .evidence { padding-left: var(--s4); padding-right: var(--s4) }
+  .claim-text { font-size: 17.5px }
+  .empty-state { padding: var(--s6) var(--s4) }
+  .toolbar .tools { margin-left: 0; width: 100% }
+  .status .detail { display: none }
+  .actions + .note { display: none }
+  textarea { min-height: 148px }
+}
+
+@media (forced-colors: active) {
+  /* the accent bars and chips are meaningful, so keep them as borders, not fills */
+  .chip.verdict, .scope, .stance { border: 1px solid CanvasText }
+  .claim::before { background: CanvasText }
+  .bar > i, .components .cbits i, .bar .fill { background: Highlight }
+  .panel, .claim, .ev, .callout { border: 1px solid CanvasText }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important }
+}
+
+/* ---------------------------------------------------------------------- print */
+@media print {
+  :root { --bar: 0px }
+  body { background: #fff }
+  .appbar, .rail, .toolbar .tools, .progress, .tabs, .actions, .samples { display: none !important }
+  .shell { display: block; max-width: none; padding: 0 }
+  .panel, .claim { box-shadow: none; break-inside: avoid; page-break-inside: avoid; border-color: #c9c9c4 }
+  .banner.on { background: #f4f4f1 }
+  a { color: #000 }
+}
 </style>
 </head>
 <body>
-<header>
-  <h1>VerifyAI</h1>
-  <span class="tagline">claims extracted, evidence retrieved, quotes verified — the assessment is arithmetic on that evidence</span>
+<header class="appbar">
+  <div class="brand">
+    <span class="mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M7 16.5l5.2 5.2L25 9" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    VerifyAI
+  </div>
+  <span class="tagline">Claims extracted, evidence retrieved, quotes verified — the assessment is arithmetic on that evidence</span>
   <span class="spacer"></span>
-  <span class="status" id="apiStatus">checking API…</span>
+  <span class="status load" id="apiStatus" role="status" aria-live="polite"><i></i><span>checking API…</span></span>
 </header>
 
-<main>
-  <!-- ---------------- input ---------------- -->
-  <section>
-    <div class="card">
-      <h2>1 · Content to check</h2>
-      <div class="body">
-        <div class="row" role="tablist" aria-label="Input type" style="margin-bottom:10px">
-          <button class="mini" id="tabText" aria-selected="true">Paste article text</button>
-          <button class="mini" id="tabUrl" aria-selected="false">From a URL</button>
+<main class="shell">
+  <!-- ------------------------------------------------------------- the input -->
+  <aside class="rail">
+    <section class="panel" aria-labelledby="input-h">
+      <div class="phead"><span class="step-index">01</span><h2 id="input-h" class="micro">Content to check</h2></div>
+      <div class="pbody">
+        <div class="tabs" role="tablist" aria-label="Input type">
+          <button id="tabText" role="tab" aria-selected="true">Paste article text</button>
+          <button id="tabUrl" role="tab" aria-selected="false">From a URL</button>
         </div>
 
         <div id="paneText">
-          <textarea id="article" placeholder="Paste the article, post or transcript here. Verification works on 3–6 atomic claims extracted from this text." spellcheck="false"></textarea>
+          <label for="article" class="micro" style="display:block;margin-bottom:6px">Text</label>
+          <textarea id="article" spellcheck="false"
+            placeholder="Paste the article, post or transcript. Verification works on the 3–6 atomic claims extracted from this text, and every claim stays anchored to a sentence of it."></textarea>
         </div>
         <div id="paneUrl" style="display:none">
-          <input type="text" id="url" placeholder="https://example.com/article" spellcheck="false" />
-          <p class="hint">The page is fetched, its main text extracted, and claims are pulled from that.</p>
+          <label for="url" class="micro" style="display:block;margin-bottom:6px">URL</label>
+          <input type="text" id="url" spellcheck="false" placeholder="https://example.com/article" />
+          <p class="note">The page is fetched and reduced to text by S1. If a site blocks automated fetching you will get a clear error naming the extractor — nothing is invented to fill the gap.</p>
         </div>
 
-        <label class="field"><span>Evidence mode</span>
-          <select id="mode">
-            <option value="auto">auto — live sources</option>
-            <option value="live">live — Wikipedia / OpenAlex / PubMed / fact-check</option>
-            <option value="offline">offline — local demo corpus (no network)</option>
-            <option value="snapshot">snapshot — captured demo backup</option>
-          </select>
-        </label>
+        <div class="field">
+          <label for="mode">Evidence source</label>
+          <span class="selwrap">
+            <select id="mode">
+              <option value="auto">auto — live sources</option>
+              <option value="live">live — query real sources</option>
+              <option value="offline">offline — local demo corpus</option>
+              <option value="snapshot">snapshot — captured demo backup</option>
+            </select>
+          </span>
+          <p class="modehelp" id="modeHelp" aria-live="polite"></p>
+        </div>
 
-        <div class="row" style="margin-top:14px">
+        <div class="actions">
           <button class="primary" id="run">Verify</button>
-          <button id="clear">Clear</button>
-          <span class="muted" id="elapsed"></span>
+          <button class="ghost" id="clear">Clear</button>
         </div>
+        <p class="note" style="display:flex;align-items:center;gap:8px">
+          <span class="kbd">⌘/Ctrl</span> <span class="kbd">↵</span> to run · nothing here returns a verdict without cited, quote-verified sources
+        </p>
 
-        <div class="progress" id="progress" aria-live="polite">
-          <span class="step" data-stage="S1">S1 claims</span>
-          <span class="step" data-stage="ground">quote guard</span>
-          <span class="step" data-stage="S2">S2 retrieval</span>
-          <span class="step" data-stage="S3">S3 stance</span>
-          <span class="step" data-stage="S4">S4 score</span>
-        </div>
-
+        <p class="micro" style="margin-top:var(--s5);display:block">Prepared inputs</p>
         <div class="samples" id="samples"></div>
-        <p class="hint">Prepared inputs each exercise one outcome: a confirmed figure, a contradicted health claim, a right fact with the wrong scope, and evidence too thin to judge. Nothing here returns a verdict without cited, quote-verified sources.</p>
       </div>
-    </div>
+    </section>
 
-    <div class="card">
-      <h2>How to read a result</h2>
-      <div class="body audit" style="font-family:inherit;font-size:13px">
-        <p style="margin:0 0 8px"><strong style="color:var(--ink)">Stance direction</strong> — do the verified quotes point toward or away from the claim. Ranges −1 (all evidence against) to +1 (all for).</p>
-        <p style="margin:0 0 8px"><strong style="color:var(--ink)">Evidence strength</strong> — how good that evidence is: credibility, relevance, independence, freshness, context. It is <em>not</em> a probability the claim is true, and a claim can have strong evidence against it.</p>
-        <p style="margin:0"><strong style="color:var(--ink)">Verdict</strong> — the two combined, with an explicit <code>INSUFFICIENT EVIDENCE</code> when fewer than two independent sources carry a stance.</p>
+    <section class="panel" aria-labelledby="prog-h">
+      <div class="phead"><span class="step-index">02</span><h2 id="prog-h" class="micro">Pipeline</h2></div>
+      <div class="pbody">
+        <div class="progress on" id="progress">
+          <ol>
+            <li data-stage="S1"><span class="dot"></span><span class="name">S1 · extract claims</span><span class="ms"></span></li>
+            <li data-stage="ground"><span class="dot"></span><span class="name">S1 · pin to the article</span><span class="ms"></span></li>
+            <li data-stage="S2"><span class="dot"></span><span class="name">S2 · retrieve &amp; rank</span><span class="ms"></span></li>
+            <li data-stage="S3"><span class="dot"></span><span class="name">S3 · stance &amp; quote guard</span><span class="ms"></span></li>
+            <li data-stage="S4"><span class="dot"></span><span class="name">S4 · score &amp; report</span><span class="ms"></span></li>
+          </ol>
+          <p class="elapsed" id="elapsed"></p>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- ---------------- results ---------------- -->
-  <section>
-    <div class="banner" id="banner"></div>
-    <div id="error"></div>
-    <div class="card" id="placeholder">
-      <div class="empty">
-        Paste content and choose <strong style="color:var(--ink)">Verify</strong>. A run shows each extracted claim, the quote it came from in your own text, the sources retrieved for it, what each source says, and the arithmetic that produced the assessment.
+    <section class="panel howto" aria-labelledby="how-h">
+      <div class="phead"><span class="step-index">03</span><h2 id="how-h" class="micro">How to read a result</h2></div>
+      <div class="pbody">
+        <ol>
+          <li><b>Stance direction</b> — do the verified quotes point toward or away from the claim. −1 all against, +1 all for.</li>
+          <li><b>Evidence strength</b> — how good that evidence is: credibility, relevance, agreement across independent domains, freshness, context. Not a probability that the claim is true.</li>
+          <li><b>Verdict</b> — both combined, with an explicit <span class="mono">INSUFFICIENT EVIDENCE</span> below two independent sources.</li>
+          <li><b>Audit trail</b> — every counter, every stage’s milliseconds, every failed source.</li>
+        </ol>
       </div>
-    </div>
+    </section>
+  </aside>
+
+  <!-- ------------------------------------------------------------ the result -->
+  <div class="stage">
+    <div id="error" role="alert"></div>
+    <div id="banner" class="banner" role="status" aria-live="polite"></div>
+    <div id="summary"></div>
     <div id="results"></div>
+    <div id="placeholder" class="panel">
+      <div class="empty-state">
+        <svg class="fig" viewBox="0 0 460 120" role="img" aria-label="Diagram: an article becomes claims, claims become queries, queries become ranked sources, sources become a score">
+          <defs><marker id="ah" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0L7 3.5L0 7z" fill="#b9b6ad"/></marker></defs>
+          <g fill="none" stroke="#d5d3cc" stroke-width="1.5">
+            <rect x="4" y="34" width="96" height="52" rx="9" fill="#fbfbf9"/>
+            <rect x="132" y="34" width="96" height="52" rx="9" fill="#fbfbf9"/>
+            <rect x="260" y="34" width="96" height="52" rx="9" fill="#fbfbf9"/>
+            <rect x="388" y="44" width="66" height="32" rx="8" fill="#eef2fd" stroke="#c9d6f6"/>
+            <path d="M100 60h26M228 60h26M356 60h26" marker-end="url(#ah)"/>
+          </g>
+          <g fill="#6d7683" font-family="ui-monospace,monospace" font-size="10.5">
+            <text x="52" y="57" text-anchor="middle">article</text>
+            <text x="52" y="72" text-anchor="middle" fill="#8b93a0">or URL</text>
+            <text x="180" y="57" text-anchor="middle">3–6 claims</text>
+            <text x="180" y="72" text-anchor="middle" fill="#8b93a0">verbatim quote</text>
+            <text x="308" y="57" text-anchor="middle">evidence</text>
+            <text x="308" y="72" text-anchor="middle" fill="#8b93a0">ranked · deduped</text>
+            <text x="421" y="63" text-anchor="middle" fill="#1a3fae">score</text>
+          </g>
+          <g fill="#8b93a0" font-family="-apple-system,Segoe UI,Roboto,sans-serif" font-size="9.5" letter-spacing=".06">
+            <text x="52" y="102" text-anchor="middle">S1</text>
+            <text x="180" y="102" text-anchor="middle">S1 + guard</text>
+            <text x="308" y="102" text-anchor="middle">S2 + S3</text>
+            <text x="421" y="102" text-anchor="middle">S4/S5</text>
+          </g>
+        </svg>
+        <h2>Paste content, choose an evidence source, and see the evidence behind every claim</h2>
+        <p>Each claim is pinned to a sentence of your own text. Each source is scored only on quotes we could find verbatim in what we retrieved — and where two independent sources are missing, the answer is <em>insufficient evidence</em>, not a guess.</p>
+        <div class="flow"><span>your text</span><em>→</em><span>claims</span><em>→</em><span>sources</span><em>→</em><span>stance + verified quote</span><em>→</em><span>transparent score</span></div>
+      </div>
+    </div>
     <div id="audit"></div>
-  </section>
+  </div>
 </main>
 
 <script>
 "use strict";
+/* ==========================================================================
+   Rendering only. Every string that came from the API or the user goes
+   through esc(); every request is relative, so this file works from any host.
+   The functions below are also driven headlessly by scripts/ui_render_check.mjs
+   against a captured /api/verify response — keep them top-level and keep the
+   "a card is .card.claim" contract that check counts on.
+   ========================================================================== */
 
-/* ------------------------------------------------------------------ state */
-const state = { source: "text", busy: false, timers: [] };
 const $ = (id) => document.getElementById(id);
-const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (ch) =>
-  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
-const pct = (value) => `${Math.round((Number(value) || 0) * 100)}%`;
-const num = (value, digits = 2) => (Number.isFinite(Number(value)) ? Number(value).toFixed(digits) : "—");
+const state = { source: "text", busy: false, timers: [], last: null };
+
+const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({
+  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+}[c]));
+const num = (value, digits = 4) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? n.toFixed(digits) : "—";
+};
 
 const VERDICT_CLASS = {
-  "SUPPORTED": "v-supported",
-  "REFUTED": "v-refuted",
-  "CONFLICTING EVIDENCE": "v-conflicting",
-  "INSUFFICIENT EVIDENCE": "v-insufficient",
+  "SUPPORTED": "v-support",
+  "REFUTED": "v-refute",
   "MIXED / PARTIALLY SUPPORTED": "v-mixed",
+  "CONFLICTING EVIDENCE": "v-mixed",
+  "INSUFFICIENT EVIDENCE": "v-insufficient",
 };
 const VERDICT_MEANING = {
-  "SUPPORTED": "Independent sources that pass the quote guard state the claim.",
-  "REFUTED": "Independent sources that pass the quote guard state the opposite.",
-  "CONFLICTING EVIDENCE": "Credible sources disagree; both sides are shown rather than averaged away.",
-  "INSUFFICIENT EVIDENCE": "Too few independent, quote-verified sources to assess this claim either way.",
-  "MIXED / PARTIALLY SUPPORTED": "Some verified support, but not enough strength or independence for a clean call.",
+  "SUPPORTED": "Independent, quote-verified sources point the same way and the evidence behind them is strong enough to say so.",
+  "REFUTED": "Independent sources contradict the claim, in quote-verified text you can open.",
+  "MIXED / PARTIALLY SUPPORTED": "The evidence leans one way, but it is not strong or broad enough for a firm verdict. Read the sources.",
+  "CONFLICTING EVIDENCE": "Credible sources point in opposite directions. Both sides are kept visible rather than cancelled out.",
+  "INSUFFICIENT EVIDENCE": "Not enough verifiable evidence to assess. This is not evidence that the claim is false.",
+};
+const DISTRO_ORDER = ["SUPPORTED", "REFUTED", "MIXED / PARTIALLY SUPPORTED", "CONFLICTING EVIDENCE", "INSUFFICIENT EVIDENCE"];
+const DISTRO_COLOR = {
+  "SUPPORTED": "var(--support)", "REFUTED": "var(--refute)",
+  "MIXED / PARTIALLY SUPPORTED": "var(--mixed)", "CONFLICTING EVIDENCE": "#c2740a",
+  "INSUFFICIENT EVIDENCE": "var(--none)",
+};
+const MODE_HELP = {
+  auto: "<b>Live sources</b> if the network and keys allow it, otherwise the local demo corpus. Never silently a snapshot.",
+  live: "<b>Real retrieval</b> (Wikipedia, OpenAlex, PubMed, …) with page text fetched for the top items, so quotes can be checked against more than a snippet.",
+  offline: "<b>Local demo corpus only.</b> Every source is tagged mock at 0.10 credibility by design, so scores stay low on purpose.",
+  snapshot: "<b>Captured backup.</b> Real pages recorded earlier, replayed from disk — a rehearsal of the pipeline, not current retrieval.",
 };
 
-/* ------------------------------------------------------------- api plumbing */
+/* ------------------------------------------------------------------- api */
 async function api(path, options) {
   const response = await fetch(path, options);
   const text = await response.text();
@@ -308,51 +629,59 @@ async function api(path, options) {
   return payload;
 }
 
-async function loadApiStatus() {
+function loadApiStatus() {
   const el = $("apiStatus");
-  try {
-    const [health, config] = await Promise.all([api("/health"), api("/api/config")]);
-    el.textContent = `API ${health.status} · S1 ${config.s1_provider} · S3 ${config.s3_mode}${config.snapshot_available ? " · snapshot ready" : ""}`;
+  if (!el) return;
+  api("/health").then((health) => api("/api/config").then((config) => {
+    el.innerHTML = `<i></i><span>${esc(health.status)}</span><span class="detail">· S1 ${esc(config.s1_provider)} · S3 ${esc(config.s3_mode)}${config.snapshot_available ? " · snapshot ready" : ""}</span>`;
     el.className = "status ok";
-  } catch (err) {
-    el.textContent = "API unreachable";
+  })).catch(() => {
+    el.innerHTML = `<i></i><span>API unreachable — start uvicorn, then reload</span>`;
     el.className = "status bad";
-  }
+  });
 }
 
-async function loadSamples() {
-  try {
-    const data = await api("/api/samples");
+function loadSamples() {
+  api("/api/samples").then((data) => {
     const box = $("samples");
     box.innerHTML = "";
     (data.samples || []).forEach((sample) => {
       const button = document.createElement("button");
       button.className = "mini";
+      button.type = "button";
       button.textContent = sample.label || sample.id;
       button.title = sample.expect || "";
       button.onclick = () => {
         setSource("text");
-        $("article").value = sample.article;
-        render();
+        $("article").value = sample.article || sample.text || "";
+        $("error").innerHTML = "";
+        // No run has happened yet, so this shows the starting state — it must not
+        // be render() with nothing in it (that threw in a real browser once).
+        paintEmpty();
       };
       box.appendChild(button);
     });
-  } catch (_) {
-    /* samples are a convenience; a missing file must not break the page */
-  }
+  }).catch(() => { /* samples are a convenience; a missing file must not break the page */ });
 }
 
-/* ------------------------------------------------------------------ render */
-function setSource(which) {
+/* -------------------------------------------------------------- interaction */
+function setSource(which, focus = true) {
   state.source = which;
   $("paneText").style.display = which === "text" ? "" : "none";
   $("paneUrl").style.display = which === "url" ? "" : "none";
   $("tabText").setAttribute("aria-selected", String(which === "text"));
   $("tabUrl").setAttribute("aria-selected", String(which === "url"));
-  $("tabText").classList.toggle("primary", which === "text");
-  $("tabUrl").classList.toggle("primary", which === "url");
+  // Only steal focus when a human asked for the switch — on page load it left the
+  // textarea ring-lit before the user had done anything.
+  if (focus) (which === "text" ? $("article") : $("url")).focus();
 }
 
+function setModeHelp() {
+  const el = $("modeHelp");
+  if (el) el.innerHTML = MODE_HELP[$("mode").value] || "";
+}
+
+/* ---------------------------------------------------------------- progress */
 function stageIndex(name) {
   if (name.startsWith("S1 claim")) return "S1";
   if (name.startsWith("S1 article")) return "ground";
@@ -362,8 +691,9 @@ function stageIndex(name) {
 }
 
 function paintProgress(stages) {
-  const steps = [...document.querySelectorAll(".progress .step")];
-  steps.forEach((step) => { step.className = "step"; step.innerHTML = step.textContent.trim(); });
+  const steps = [...document.querySelectorAll(".progress li")];
+  if (!steps.length) return;
+  steps.forEach((step) => { step.className = ""; step.innerHTML = step.textContent.trim(); });
   if (!stages) {
     steps[0].classList.add("active");
     steps[0].innerHTML = `<span class="spinner"></span> ${esc(steps[0].textContent)}`;
@@ -385,131 +715,227 @@ function paintProgress(stages) {
   });
 }
 
+function showSkeleton() {
+  $("results").innerHTML = `<div class="skeleton" aria-hidden="true">
+    <div class="sk tall"></div><div class="sk"></div><div class="sk"></div></div>`;
+}
+
+function paintEmpty() {
+  $("placeholder").style.display = "";
+  $("results").innerHTML = "";
+  $("audit").innerHTML = "";
+  $("summary").innerHTML = "";
+  $("banner").className = "banner";
+  $("banner").innerHTML = "";
+}
+
+/* --------------------------------------------------------------- components */
 function gauge(label, value, hint) {
   const width = Math.max(0, Math.min(100, (Number(value) || 0) * 100));
-  return `<div class="gauge"><div>${esc(label)} <span class="num">${num(value)}</span></div>
+  return `<div class="gauge">
+    <div class="ghead"><span class="glabel">${esc(label)}</span><span class="gval">${num(value)}</span></div>
     <div class="bar"><i style="width:${width}%"></i></div>
-    ${hint ? `<div class="muted" style="margin-top:5px;font-size:11.5px">${esc(hint)}</div>` : ""}</div>`;
+    ${hint ? `<div class="ghint">${esc(hint)}</div>` : ""}</div>`;
 }
 
 function stanceBar(stance) {
   const value = Math.max(-1, Math.min(1, Number(stance) || 0));
-  const half = 50;
-  const fill = Math.abs(value) * half;
-  const left = value < 0 ? half - fill : half;
-  const cls = value < -0.05 ? "neg" : value > 0.05 ? "pos" : "";
-  return `<div class="gauge"><div>Stance direction <span class="num">${value > 0.05 ? "+" : ""}${num(value)}</span></div>
-    <div class="bar" style="position:relative">
-      <span style="position:absolute;top:0;bottom:0;left:${left}%;width:${Math.max(fill, 1.5)}%;background:${value < -0.05 ? "var(--refute)" : value > 0.05 ? "var(--support)" : "var(--neutral)"};border-radius:999px"></span>
-      <span style="position:absolute;top:-3px;bottom:-3px;left:50%;width:1px;background:#39424c"></span>
+  const fill = Math.abs(value) * 50;
+  const left = value < 0 ? 50 - Math.max(fill, 1.2) : 50;
+  const color = value < -0.05 ? "var(--refute)" : value > 0.05 ? "var(--support)" : "var(--none)";
+  const signed = `${value > 0.05 ? "+" : ""}${num(value)}`;
+  return `<div class="gauge">
+    <div class="ghead"><span class="glabel">Stance direction</span><span class="gval" style="color:${color}">${esc(signed)}</span></div>
+    <div class="bar" style="background:var(--surface);border:1px solid var(--line)">
+      <span class="fill" style="left:${left}%;width:${Math.max(fill, 1.2)}%;background:${color}"></span>
+      <span class="mid"></span>
     </div>
-    <div class="muted" style="margin-top:5px;font-size:11.5px">−1 sources against · 0 balanced or none · +1 sources for</div></div>`;
+    <div class="ghint">−1 every source against · 0 balanced or nothing · +1 every source for</div></div>`;
 }
 
 const COMPONENTS = [
-  ["C", "source credibility", "#58a6ff"],
-  ["R", "evidence relevance", "#bc8cff"],
-  ["A", "independent agreement", "#3fb950"],
-  ["T", "freshness", "#d29922"],
-  ["K", "contextual consistency", "#39c5cf"],
+  ["C", "source credibility", "0.30", "#1d4ed8"],
+  ["R", "evidence relevance", "0.30", "#6d28d9"],
+  ["A", "independent agreement", "0.20", "#166534"],
+  ["T", "freshness", "0.10", "#9a5b06"],
+  ["K", "contextual consistency", "0.10", "#0f766e"],
 ];
 
 function breakdown(report) {
-  const max = 0.3;  // largest possible contribution, for a common scale
-  const rows = COMPONENTS.map(([key, meaning, color]) => {
+  const max = 0.3;  // largest possible contribution, so all five bars share a scale
+  const rows = COMPONENTS.map(([key, meaning, weight, color]) => {
     const value = report.scores?.[key];
     const contribution = report.contributions?.[key] ?? 0;
     const width = Math.max(0, Math.min(100, (contribution / max) * 100));
-    return `<tr><td class="k">${key}</td><td style="width:100%">
-        <div>${esc(meaning)} <span class="muted">${num(value)} × ${key === "C" || key === "R" ? "0.30" : key === "A" ? "0.20" : "0.10"}</span></div>
-        <div class="cbits"><i style="width:${width}%;background:${color}"></i></div></div>
-      <td style="text-align:right">${num(contribution, 3)}</td></tr>`;
+    return `<tr>
+      <td class="k"><span class="key">${key}</span></td>
+      <td><div class="what">${esc(meaning)} <span class="w">${num(value, 2)} × ${weight}</span></div>
+        <div class="cbits"><i style="width:${width}%;background:${color}"></i></div></td>
+      <td class="v">${num(contribution, 3)}</td></tr>`;
   }).join("");
+  const n = report.audit.n_independent;
   return `<div class="components"><table>${rows}</table>
-    <div class="muted" style="margin-top:6px">S<sub>raw</sub> = 0.30C + 0.30R + 0.20A + 0.10T + 0.10K = <strong style="color:var(--ink)">${num(report.score_raw)}</strong>,
-    then shrunk toward 0.5 by a factor of ${num(report.shrinkage_factor)} because ${report.audit.n_independent} independent source${report.audit.n_independent === 1 ? "" : "s"} carried a stance.</div></div>`;
+    <p class="formula">S<sub>raw</sub> = 0.30C + 0.30R + 0.20A + 0.10T + 0.10K = <strong>${num(report.score_raw)}</strong>
+    · shrunk by ${num(report.shrinkage_factor, 2)} for ${n} independent source${n === 1 ? "" : "s"}
+    · <strong>${num(report.evidence_strength)}</strong> shown as evidence strength</p></div>`;
 }
 
 function evidenceCard(item) {
   const verified = item.quote_verified;
-  // "verified" is not one claim: matching fetched page text and matching a 300-char
-  // search snippet are different strengths, and the plan says the UI must not blur them.
+  // "verified" is not one claim: matching fetched page text and matching a search
+  // snippet are different strengths, and the plan says the UI must not blur them.
   const scope = verified
     ? (item.quote_scope === "snippet"
         ? '<span class="scope snip" title="The quote was found in the search snippet; page text was not retrieved">quote verified in the snippet only</span>'
         : '<span class="scope full" title="The quote was found in text fetched from the source page">quote verified in fetched page text</span>')
-    : '<span class="scope none">quote not verified — excluded from the score</span>';
+    : '<span class="scope none" title="No verbatim match in the retrieved text, so this item is not counted anywhere in the score">quote not verified — excluded from the score</span>';
   const quote = verified && item.quote
     ? `<blockquote class="quote"><span class="label">Verified quote from this source</span>“${esc(item.quote)}”</blockquote>`
     : "";
+  const domain = item.domain || "";
   const link = item.url
-    ? `<a href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">${esc(item.title || item.domain || item.url)}</a>`
-    : `<span>${esc(item.title || item.domain || "untitled source")}</span>`;
-  const date = item.published_at ? `<span title="publication date">${esc(item.published_at)}</span>` : '<span class="muted">date unknown</span>';
+    ? `<a href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">${esc(item.title || domain || item.url)}</a>`
+    : `<a tabindex="-1">${esc(item.title || domain || "untitled source")}</a>`;
+  const monogram = (domain || item.source_kind || "?").replace(/^www\./, "").slice(0, 2);
+  const date = item.published_at
+    ? `<span title="publication date">${esc(item.published_at)}</span>`
+    : '<span>date unknown</span>';
   return `<article class="ev">
     <div class="ev-top">
+      <span class="avatar" aria-hidden="true">${esc(monogram)}</span>
+      <span class="src">${link}<span class="dom">${esc(domain || "—")} · ${esc(item.source_kind || "web")}${item.credibility != null ? ` · cred ${num(item.credibility, 2)}` : ""}</span></span>
       <span class="stance s-${esc(item.stance)}">${esc(item.stance)}</span>
-      <span class="src">${link}<br><span class="dom">${esc(item.domain || "")} · ${esc(item.source_kind || "web")}</span></span>
     </div>
     ${quote}
-    ${item.rationale ? `<div class="rationale">${esc(item.rationale)}</div>` : ""}
-    <div class="ev-foot">${scope}<span>relevance ${num(item.relevance)}</span><span>credibility ${num(item.credibility)}</span>${date}</div>
+    ${item.rationale ? `<p class="rationale">${esc(item.rationale)}</p>` : ""}
+    <div class="ev-foot">${scope}<span class="sep"></span><span>relevance ${num(item.relevance, 2)}</span><span class="sep"></span><span>context ${num(item.context_score, 2)}</span><span class="sep"></span>${date}</div>
   </article>`;
+}
+
+function ledger(report) {
+  const a = report.audit || {};
+  const rows = [
+    ["quote-verified items scored", `${a.n_used ?? 0} of ${a.n_retrieved ?? 0}`],
+    ["independent domains", `${a.n_independent ?? 0}${(a.n_independent ?? 0) < 2 ? " · below the 2 needed for a verdict" : ""}`],
+    ["quotes dropped by the guard", `${a.hallucinated_quotes_dropped ?? 0}`],
+  ];
+  if (a.unknown_freshness) rows.push(["publication dates", "unknown · freshness scored neutral"]);
+  if (a.sources_failed && a.sources_failed.length) rows.push(["sources that failed", `${a.sources_failed.length} · ${a.sources_failed.join(", ")}`]);
+  return `<div class="ledger">${rows.map(([key, value]) =>
+    `<div><span>${esc(key)}</span><span class="lv${/below the 2|unknown/.test(value) ? " flag" : ""}">${esc(value)}</span></div>`).join("")}</div>`;
 }
 
 function claimCard(report, details, index, grounded) {
   const claim = report.claim || {};
-  const verdictClass = VERDICT_CLASS[report.verdict] || "v-insufficient";
-  const dropped = report.audit.hallucinated_quotes_dropped || 0;
+  const verdict = report.verdict || "INSUFFICIENT EVIDENCE";
+  const verdictClass = VERDICT_CLASS[verdict] || "v-insufficient";
+  const dropped = report.audit?.hallucinated_quotes_dropped || 0;
+  const shortId = String(claim.id || `#${index + 1}`).replace(/^#?claim[_-]?/i, "#");
   const quote = claim.article_quote
-    ? `<blockquote class="quote"><span class="label">Verbatim in your text — claim ${esc(claim.id || `#${index + 1}`)}</span>“${esc(claim.article_quote)}”</blockquote>`
+    ? `<blockquote class="quote"><span class="label">Verbatim in your text — claim ${esc(shortId)}</span>“${esc(claim.article_quote)}”</blockquote>`
     : `<blockquote class="quote missing"><span class="label">Article quote</span>This claim could not be matched to a verbatim sentence of the submitted text, so it was not carried forward as verified.</blockquote>`;
 
   const evidence = (report.evidence || []).map(evidenceCard).join("");
+  // Retrieved-but-unusable sources are shown rather than hidden: the honest claim is
+  // "we looked and could not verify", and a reviewer should be able to see which ones.
   const unverified = ((details && details.sources) || []).filter((s) => !s.quote_verified);
+  const excluded = unverified.length
+    ? `<div class="excluded"><p class="micro">Excluded by the guard · ${unverified.length}</p>
+        ${unverified.map((item) => evidenceCard({ ...item, quote: "", quote_verified: false })).join("")}</div>`
+    : "";
   const unverifiedNote = unverified.length
-    ? `<p class="hint">${unverified.length} retrieved source${unverified.length === 1 ? "" : "s"} produced no quote that survived verification, so it${unverified.length === 1 ? " was" : " were"} left out of the score.</p>`
+    ? `<p class="hint">${unverified.length} retrieved source${unverified.length === 1 ? "" : "s"} produced no quote that survived verification, so ${unverified.length === 1 ? "it was" : "they were"} left out of the score — shown below so you can see what we could not use.</p>`
     : "";
 
   let footer = "";
-  if (report.verdict === "INSUFFICIENT EVIDENCE") {
-    footer = `<div class="insufficient-note"><strong>Not enough evidence to assess.</strong>
+  if (verdict === "INSUFFICIENT EVIDENCE") {
+    footer = `<div class="callout"><strong>Not enough evidence to assess.</strong>
       ${report.audit.n_retrieved === 0
         ? "No source returned material relevant enough to cite."
-        : `${report.audit.n_used} of ${report.audit.n_retrieved} retrieved item${report.audit.n_retrieved === 1 ? "" : "s"} carried a verified quote, across ${report.audit.n_independent} independent domain${report.audit.n_independent === 1 ? "" : "s"}.
-           Two independent sources are required before a verdict is offered.`}
-      The sources listed above are shown so you can read them — that is the point of this tool.</div>`;
+        : `${report.audit.n_used} of ${report.audit.n_retrieved} retrieved item${report.audit.n_retrieved === 1 ? "" : "s"} carried a verified quote, across ${report.audit.n_independent} independent domain${report.audit.n_independent === 1 ? "" : "s"} — two independent sources are required before a verdict is offered.`}
+      The sources listed above are still shown so you can read them; that is the point of this tool.</div>`;
   } else if (report.conflicts && report.conflicts.length) {
-    footer = `<div class="insufficient-note"><strong>Sources disagree.</strong> Both directions are kept in the score rather than cancelled out: ${report.conflicts.slice(0, 4).map(esc).join(", ")}${report.conflicts.length > 4 ? `, +${report.conflicts.length - 4} more` : ""}.</div>`;
+    footer = `<div class="callout conflict"><strong>Sources disagree.</strong>
+      Both directions are kept in the score rather than cancelled out:
+      <span class="srcnames">${report.conflicts.slice(0, 4).map(esc).join(", ")}${report.conflicts.length > 4 ? `, +${report.conflicts.length - 4} more` : ""}</span></div>`;
   }
 
-  return `<div class="card claim">
+  const entityChip = grounded && grounded.entities && grounded.entities.length
+    ? `<span class="chip" title="Entities S1 found in this claim; they are what the retrieval query was built around">
+         ${grounded.entities.slice(0, 4).map((e) => esc(e)).join(" · ")}${grounded.entities.length > 4 ? ` +${grounded.entities.length - 4}` : ""}
+       </span>`
+    : "";
+
+  return `<section class="card claim" data-v="${esc(verdict)}">
     <div class="claim-head">
-      <div class="claim-text">${esc(claim.text || "unavailable")}</div>
+      <div class="claim-top">
+        <span class="claim-id">CLAIM ${esc(shortId)}</span>
+        <span class="chip verdict ${verdictClass}">${esc(verdict)}</span>
+      </div>
+      <h3 class="claim-text">${esc(claim.text || "unavailable")}</h3>
       ${quote}
-      <div class="meta">
-        <span class="chip verdict ${verdictClass}">${esc(report.verdict)}</span>
+      <div class="claim-meta">
         <span class="chip type">${esc(claim.type || "other")}</span>
-        ${grounded && grounded.entities && grounded.entities.length
-          ? `<span class="chip" title="Entities S1 found in this claim; they are what the retrieval query was built around">
-               ${grounded.entities.slice(0, 4).map((e) => esc(e)).join(" · ")}${grounded.entities.length > 4 ? ` +${grounded.entities.length - 4}` : ""}
-             </span>`
-          : ""}
-        ${claim.time_sensitive ? '<span class="chip" title="This claim was scored with a short freshness half-life">time-sensitive</span>' : ""}
-        ${report.evidence.length ? `<span class="chip">${report.evidence.length} verified evidence item${report.evidence.length === 1 ? "" : "s"}</span>` : '<span class="chip">0 verified evidence items</span>'}
+        ${entityChip}
+        ${claim.time_sensitive ? '<span class="chip" title="Scored with a short freshness half-life: 18 months">time-sensitive</span>' : ""}
+        <span class="chip">${(report.evidence || []).length} verified evidence item${(report.evidence || []).length === 1 ? "" : "s"}</span>
         ${dropped ? `<span class="chip" title="Quotes that could not be found in the retrieved text">${dropped} quote${dropped === 1 ? "" : "s"} dropped</span>` : ""}
       </div>
-      <div class="muted" style="margin-top:8px;font-size:12.5px">${esc(VERDICT_MEANING[report.verdict] || "")}</div>
+      <p class="claim-meaning">${esc(VERDICT_MEANING[verdict] || "")}</p>
     </div>
-    <div class="scores">
-      ${stanceBar(report.stance_score)}
-      ${gauge("Evidence strength", report.evidence_strength, "quality of the evidence, not a probability of truth")}
-      ${breakdown(report)}
+    <div class="claim-metrics">
+      <div>${stanceBar(report.stance_score)}${gauge("Evidence strength", report.evidence_strength, "quality of the evidence, not a probability of truth")}${ledger(report)}</div>
+      <div>${breakdown(report)}</div>
     </div>
-    ${report.evidence.length ? `<div class="evidence"><h3>Evidence and verified quotes</h3>${evidence}${unverifiedNote}</div>` :
-      (report.audit.n_retrieved ? `<div class="evidence"><h3>What was retrieved</h3>${unverifiedNote || '<p class="hint">Nothing retrieved for this claim passed the quote guard.</p>'}</div>` : "")}
+    ${report.evidence && report.evidence.length
+      ? `<div class="evidence"><h3>Evidence and verified quotes</h3>${evidence}${unverifiedNote}${excluded}</div>`
+      : (report.audit.n_retrieved
+          ? `<div class="evidence"><h3>What was retrieved</h3>${unverifiedNote || '<p class="hint">Nothing retrieved for this claim passed the quote guard.</p>'}${excluded}</div>`
+          : "")}
     ${footer}
-  </div>`;
+  </section>`;
+}
+
+/* ------------------------------------------------------------- report head */
+function paintSummary(data, claims) {
+  const counts = {};
+  claims.forEach((report) => { counts[report.verdict] = (counts[report.verdict] || 0) + 1; });
+  const total = claims.length || 1;
+  const track = DISTRO_ORDER.filter((v) => counts[v])
+    .map((v) => `<i style="width:${(counts[v] / total) * 100}%;background:${DISTRO_COLOR[v]}"></i>`).join("");
+  const legend = DISTRO_ORDER.filter((v) => counts[v])
+    .map((v) => `<span><span class="swatch" style="background:${DISTRO_COLOR[v]}"></span>${esc(v.split(" ")[0])} <b>${counts[v]}</b></span>`).join("");
+  const s3 = data.s3_audit || {};
+  const summary = data.retrieval_summary || {};
+  const chips = [
+    `mode <b>${esc(data.mode)}</b>`,
+    `analyzer <b>${esc(s3.analyzer || "—")}</b>`,
+    `evidence <b>${summary.evidence_items ?? 0} items · ${summary.quote_verified_items ?? 0} verified</b>`,
+    `domains <b>${summary.distinct_domains ?? 0}</b>`,
+  ];
+  if (data.demo_backup) chips.push('<b>demo backup</b>');
+  $("summary").innerHTML = `<div class="toolbar">
+      <div>
+        <h1>${claims.length} claim${claims.length === 1 ? "" : "s"} from your text</h1>
+        <p class="sub">Only quotes found verbatim in retrieved text are counted. Snippet-only verification is labelled as the weaker thing it is.</p>
+        <div class="metachips">${chips.map((c) => `<span class="chip ghost">${c}</span>`).join("")}</div>
+      </div>
+      <div class="tools">
+        <button class="mini" id="copyJson" type="button">Copy JSON</button>
+        <button class="mini" id="printReport" type="button">Print</button>
+      </div>
+    </div>
+    <div class="distro"><div class="track" role="img" aria-label="Verdict distribution">${track}</div><div class="legend">${legend}</div></div>`;
+
+  const copy = $("copyJson");
+  if (copy) copy.onclick = () => {
+    const text = JSON.stringify(data, null, 2);
+    const done = () => { copy.textContent = "Copied"; setTimeout(() => { copy.textContent = "Copy JSON"; }, 1600); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, () => done());
+    else done();
+  };
+  const print = $("printReport");
+  if (print) print.onclick = () => window.print();
 }
 
 function renderAudit(data) {
@@ -520,8 +946,9 @@ function renderAudit(data) {
     const retrieval = claim.retrieval || {};
     acc.queried += retrieval.sources_queried || 0;
     acc.ok += retrieval.sources_ok || 0;
-    acc.failed += retrieval.failed_source_names ? retrieval.failed_source_names.length : 0;
-    (retrieval.failed_source_names || []).forEach((name) => acc.names.add(name));
+    const failed = retrieval.failed_source_names || [];
+    acc.failed += failed.length;
+    failed.forEach((name) => acc.names.add(name));
     return acc;
   }, { queried: 0, ok: 0, failed: 0, names: new Set() });
 
@@ -534,73 +961,91 @@ function renderAudit(data) {
     ["claims with no evidence", summary.claims_without_evidence ?? 0],
     ["sources queried", `${totals.ok}/${totals.queried}`],
     ["sources that failed", totals.names.size
-      ? `${totals.failed} — ${[...totals.names].join(", ")} (their results are simply absent; the run continues)`
+      ? `${totals.failed} — ${[...totals.names].join(", ")}`
       : "none"],
     ["S3 stance assigned", `${s3.decisive ?? 0}/${s3.evidence_analyzed ?? 0}`],
     ["quotes dropped by guard", s3.quote_dropped_count ?? 0],
     ["claims dropped by quote guard", grounding.claims_dropped_ungrounded ?? 0],
   ];
 
-  const warnings = (data.warnings || []).map((text) => `<div class="warn">⚠ ${esc(text)}</div>`).join("");
+  const warnings = (data.warnings || []).map((text) => `<div class="warn">${esc(text)}</div>`).join("");
   const stages = (data.stages || []).map((stage) =>
-    `<li><span class="st-${esc(stage.status)}">●</span><span class="name">${esc(stage.name)} <span class="muted">${esc(stage.detail || "")}</span></span><span class="ms">${stage.ms} ms</span></li>`).join("");
+    `<div><span class="d s-${esc(stage.status)}"></span><span class="name">${esc(stage.name)} <span class="detail">${esc(stage.detail || "")}</span></span><span class="ms">${stage.ms} ms</span></div>`).join("");
 
-  $("audit").innerHTML = `<div class="card" style="margin-top:16px">
-    <h2>Audit trail — how this assessment was produced</h2>
-    <div class="body audit">
+  $("audit").innerHTML = `<section class="panel audit" aria-labelledby="audit-h" style="margin-top:var(--s5)">
+    <div class="phead"><span class="step-index">A</span><h2 id="audit-h" class="micro">Audit trail — how this assessment was produced</h2></div>
+    <div class="pbody">
       <div class="grid">${cells.map(([key, value]) => `<div><span class="k">${esc(key)}</span><span class="v">${esc(value)}</span></div>`).join("")}</div>
-      <ul class="stages">${stages}</ul>
-      ${warnings}
-      <p class="disclaimer">${esc(data.report.disclaimer || "")} Mode: ${esc(data.mode)} · analyzer: ${esc(s3.analyzer || "—")} · S1 provider: ${esc((data.s1 || {}).provider || "—")}${data.demo_backup ? " · <strong>DEMO BACKUP: captured snapshot, not a live retrieval</strong>" : ""}</p>
-    </div></div>`;
+      <div class="stage">${stages}</div>
+      ${warnings ? `<div style="margin-top:var(--s4)">${warnings}</div>` : ""}
+      <p class="disclaimer"><strong>${esc(data.report.disclaimer || "Evidence-weighted assessment, not a guaranteed truth verdict.")}</strong>
+      Mode ${esc(data.mode)} · analyzer ${esc(s3.analyzer || "—")} · S1 provider ${esc((data.s1 || {}).provider || "—")}${data.demo_backup ? " · <strong>demo backup: captured snapshot, not a live retrieval</strong>" : ""}</p>
+    </div></section>`;
 }
 
+/* ------------------------------------------------------------------ render */
 function render(data) {
-  const claims = (data.report && data.report.claims) || [];
-  const details = new Map((data.per_claim_retrieval || []).map((item) => [item.claim_id, item]));
+  if (!data || !data.report) throw new TypeError("render() requires a /api/verify response");
+  const claims = data.report.claims || [];
+  $("placeholder").style.display = "none";
+
   if (!claims.length) {
-    $("results").innerHTML = `<div class="card"><div class="empty">No claims survived extraction and the verbatim-quote guard. Nothing was verified.</div></div>`;
+    $("results").innerHTML = `<div class="panel"><div class="empty">No claims survived extraction and the verbatim-quote guard, so nothing was verified. That is a real result: it means this text contained no checkable claim we could anchor to a sentence of itself.</div></div>`;
+    $("summary").innerHTML = `<div class="toolbar"><div><h1>Nothing to verify</h1><p class="sub">No claim carried a quote back to your text.</p></div></div>`;
+    $("banner").className = "banner";
     renderAudit(data);
     return;
   }
+
   // grounding.claims is where the entities S1 extracted live: ClaimInput (the frozen
   // scoring contract) has no entities field, so the audit payload carries them instead.
+  const details = new Map((data.per_claim_retrieval || []).map((item) => [item.claim_id, item]));
   const grounded = new Map(((data.grounding || {}).claims || []).map((item) => [item.id, item]));
   $("results").innerHTML = claims
     .map((report, index) => claimCard(
       report, details.get(report.claim.id), index, grounded.get(report.claim.id)))
     .join("");
 
+  paintSummary(data, claims);
+
   const banner = $("banner");
   if (data.demo_backup) {
     banner.className = "banner backup on";
-    banner.innerHTML = "<strong>Demo backup.</strong> Evidence came from a captured snapshot rather than a live search, so it is a rehearsal of the pipeline, not current retrieval.";
+    banner.innerHTML = "<strong>Demo backup.</strong> Evidence came from a captured snapshot rather than a live search — a rehearsal of the pipeline, not current retrieval.";
   } else if (data.mode === "offline") {
     banner.className = "banner backup on";
-    banner.innerHTML = "<strong>Offline mode.</strong> Sources are the local demo corpus, tagged mock with 0.10 credibility, so scores stay deliberately low.";
+    banner.innerHTML = "<strong>Offline mode.</strong> Sources are the local demo corpus: tagged mock, credibility 0.10 by design, so scores stay low on purpose.";
   } else {
     banner.className = "banner on";
-    banner.innerHTML = `<strong>${claims.length} claim${claims.length === 1 ? "" : "s"} extracted from your text.</strong> Each was checked against retrieved sources; only quotes found verbatim in those sources are counted in a score.`;
+    banner.innerHTML = `<strong>${claims.length} claim${claims.length === 1 ? "" : "s"} extracted from your text.</strong> Each was checked against retrieved sources, and only quotes found verbatim in those sources are counted in a score.`;
   }
   renderAudit(data);
 }
 
-/* -------------------------------------------------------------------- run */
+function showError(message) {
+  $("error").innerHTML = `<div class="error"><strong>That run did not complete.</strong>${esc(message)}
+    <div class="next">Nothing was invented to fill the gap. Switch the evidence source to <b>offline</b> and run again for a result from the local demo corpus.</div></div>`;
+  $("results").innerHTML = "";
+  $("summary").innerHTML = "";
+  $("placeholder").style.display = "none";
+}
+
+/* --------------------------------------------------------------------- run */
 function startProgress() {
   $("progress").classList.add("on");
   paintProgress(null);
   const began = Date.now();
   state.timers.push(setInterval(() => {
-    $("elapsed").textContent = `${((Date.now() - began) / 1000).toFixed(1)}s`;
+    $("elapsed").textContent = `${((Date.now() - began) / 1000).toFixed(1)}s elapsed`;
   }, 100));
   return began;
 }
+
 function stopProgress(stages, began) {
   state.timers.forEach(clearInterval);
   state.timers = [];
   if (stages) paintProgress(stages);
-  else $("progress").classList.remove("on");
-  if (began) $("elapsed").textContent = `done in ${((Date.now() - began) / 1000).toFixed(1)}s`;
+  if (began) $("elapsed").textContent = `done in ${((Date.now() - began) / 1000).toFixed(2)}s`;
 }
 
 async function run() {
@@ -620,9 +1065,11 @@ async function run() {
   $("run").disabled = true;
   $("run").textContent = "Verifying…";
   $("error").innerHTML = "";
-  $("results").innerHTML = "";
   $("audit").innerHTML = "";
+  $("summary").innerHTML = "";
+  $("results").innerHTML = "";
   const began = startProgress();
+  showSkeleton();
 
   try {
     const data = await api("/api/verify", {
@@ -630,10 +1077,15 @@ async function run() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
+    state.last = data;
     stopProgress(data.stages, began);
     render(data);
+    if (window.matchMedia && !window.matchMedia("(min-width: 1121px)").matches) {
+      $("summary").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   } catch (err) {
     stopProgress(null, began);
+    $("progress").classList.remove("on");
     showError(err.message || String(err));
   } finally {
     state.busy = false;
@@ -642,33 +1094,27 @@ async function run() {
   }
 }
 
-function showError(message) {
-  $("error").innerHTML = `<div class="error"><strong>That run did not complete.</strong>${esc(message)}
-    <div style="margin-top:8px;color:var(--muted)">Nothing was invented to fill the gap. Switch the evidence mode to <em>offline</em> and run again for a result from the local demo corpus.</div></div>`;
-  $("results").innerHTML = "";
-}
-
-/* ----------------------------------------------------------------- wiring */
+/* ------------------------------------------------------------------ wiring */
 $("tabText").onclick = () => setSource("text");
 $("tabUrl").onclick = () => setSource("url");
 $("run").onclick = run;
-$("clear").onclick = () => {
-  $("article").value = "";
-  $("url").value = "";
-  $("results").innerHTML = "";
-  $("audit").innerHTML = "";
-  $("error").innerHTML = "";
-  $("banner").className = "banner";
-  $("progress").classList.remove("on");
-  $("elapsed").textContent = "";
-  $("placeholder").style.display = "";
-};
+$("mode").addEventListener("change", setModeHelp);
 document.addEventListener("keydown", (event) => {
   if ((event.metaKey || event.ctrlKey) && event.key === "Enter") run();
 });
-$("article").addEventListener("input", () => { $("placeholder").style.display = $("article").value.trim() ? "none" : ""; });
+$("clear").onclick = () => {
+  $("article").value = "";
+  $("url").value = "";
+  $("error").innerHTML = "";
+  $("elapsed").textContent = "";
+  $("progress").classList.remove("on");
+  paintEmpty();
+  $("article").focus();
+};
 
-setSource("text");
+setSource("text", false);
+setModeHelp();
+paintEmpty();
 loadApiStatus();
 loadSamples();
 </script>

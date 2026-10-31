@@ -8,8 +8,12 @@ says so instead of guessing. Everything else is decoration.
 
 ```bash
 cd Factora
+./scripts/bootstrap.sh --skip-tests     # once, on whatever machine you will present from
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --app-dir backend
 ```
+
+`docs/SETUP.md` is the long version (keys, Ollama, troubleshooting). Nothing in this script
+requires them: it assumes no keys, no model server and no network beyond localhost.
 
 Open `http://localhost:8000/` (Swagger at `/docs`). Click one sample button once to warm the
 process, then leave it on that result — the run is ~50 ms warm, and a cold start costs
@@ -17,8 +21,16 @@ nothing to hide because the elapsed timer is real.
 
 Check what this process will actually do: `GET /api/config` reports the S1 provider, the S3
 mode, whether the snapshot file exists and which API keys are present. On a laptop with no
-keys and no network it reads `s1_provider: mock`, `verify_mode: auto`,
-`snapshot_available: true` — which is exactly the setup this script assumes.
+keys and no network it reads `s1_provider: mock`, `verify_mode: auto` with
+`verify_mode_note: "per request: the mode in the request decides"`, `snapshot_available: true`
+— which is exactly the setup this script assumes. `python scripts/check_connections.py` prints
+the same facts plus whether Ollama and each source answer; every `absent` row there is a
+supported state, so read it out as "the tool runs without all four of those".
+
+If `check_connections.py` reports `ollama · inference: ok`, you have one more beat available:
+run a sample in `auto`, and the audit footer reads `analyzer: llm` instead of `lexical` — the
+stance came from the local model, and the quote guard still dropped anything it invented. Say
+which machine that is on; do not demo it if you have not run it once yourself.
 
 ## Beat 1 — paste an article, get claims with quotes (0:00–0:45)
 
@@ -110,7 +122,9 @@ fullscreen, print it for a handout. It is ordered for the 3-minute version above
 
 ## Rehearsal checklist (run it twice, out loud, before you submit)
 
-- [ ] `python -m pytest -q` → 393 passed, exit 0. If it is not, you are demoing a broken build.
+- [ ] `python -m pytest -q` → 415 passed, exit 0. If it is not, you are demoing a broken build.
+- [ ] `python scripts/check_connections.py` → 0 `FAIL` rows. `absent` is fine (no key, no Ollama);
+      a `FAIL` is a dependency that is configured and broken, which is the one thing to fix first.
 - [ ] Server starts from a **fresh venv** on the presenting machine, not just yours.
 - [ ] Beat 1–4 performed once with **live** working, then once with the network turned off.
 - [ ] You can say the C=0.10 line without looking: offline sources are mock and scored 0.10 by design.
@@ -123,7 +137,7 @@ fullscreen, print it for a handout. It is ordered for the 3-minute version above
 
 | Claim you can make | Source |
 | --- | --- |
-| "393 tests pass, exit 0" | `python -m pytest -q` (306 pre-existing + 29 S3 + 26 quote-guard + 25 verify API + 7 QA-set) |
+| "415 tests pass, exit 0" | `python -m pytest -q` — 415 tests (306 pre-existing + 29 S3 + 26 quote-guard + 34 verify API + 7 QA-set + 11 Ollama wiring + 2 provider tests moved in from the repo root) |
 | "9 of 9 scorable cases pointed the expected way, with 0 invariant violations" | `data/test_set_results.json`, `mode=offline` |
 | "5 of 9 on captured real sources — retrieval noise costs us 4 cases" | `python scripts/run_test_set.py --mode snapshot` |
 | "10/10 evidence items analysed, 0 fabricated quotes, seam compatible" | `python scripts/check_s3_contract.py --analyze s3_analysis:analyze --replay data/demo_snapshot.json` |

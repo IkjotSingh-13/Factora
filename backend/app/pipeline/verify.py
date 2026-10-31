@@ -124,24 +124,91 @@ class VerifyInputError(Exception):
 # ---------------------------------------------------------------------------
 # Stage helpers
 # ---------------------------------------------------------------------------
-def _engine_for(mode: Mode) -> RetrievalEngine:
+#: (RetrievalConfig field, environment variable, lowest sane value, highest)
+_S2_INT_KNOBS: tuple[tuple[str, str, int, int], ...] = (
+    ("top_k", "S2_TOP_K", 1, 20),
+    ("per_source_limit", "S2_PER_SOURCE_LIMIT", 1, 20),
+    ("max_per_domain", "S2_MAX_PER_DOMAIN", 1, 20),
+    ("cache_ttl_s", "S2_CACHE_TTL_S", 0, 86400),
+)
+
+
+def _s2_overrides() -> tuple[dict[str, Any], list[str]]:
+    """Retrieval knobs read from the environment, plus a note for anything ignored.
+
+    ``.env.example`` advertises these, so they have to do something: a setting that is
+    silently inert is worse than no setting, because the reader believes they changed
+    the run. A value that does not parse or is out of range is dropped and *named* in
+    the response warnings — a typo in a config file must not take the pipeline down,
+    and must not be invisible either.
+    """
+    overrides: dict[str, Any] = {}
+    notes: list[str] = []
+    for field, var, low, high in _S2_INT_KNOBS:
+        raw = os.getenv(var, "").strip()
+        if not raw:
+            continue
+        try:
+            value = int(raw)
+        except ValueError:
+            notes.append(f"S2: ignoring {var}={raw!r}, which is not a whole number.")
+            continue
+        if not low <= value <= high:
+            notes.append(f"S2: ignoring {var}={value}; the usable range is {low}-{high}.")
+            continue
+        overrides[field] = value
+    cache_dir = os.getenv("S2_DISK_CACHE_DIR", "").strip()
+    if cache_dir:
+        overrides["disk_cache_dir"] = cache_dir
+    return overrides, notes
+
+
+def _engine_for(mode: Mode, notes: list[str] | None = None) -> RetrievalEngine:
     """The retrieval engine one run should use, given its mode."""
+    overrides, found = _s2_overrides()
+    if notes is not None:
+        notes.extend(found)
+    fetch_raw = os.getenv("S2_FETCH_FULL_TEXT", "3").strip()
+    try:
+        fetch_full_text = max(0, int(fetch_raw))
+    except ValueError:
+        fetch_full_text = 3
+        if notes is not None:
+            notes.append(
+                f"S2: ignoring S2_FETCH_FULL_TEXT={fetch_raw!r}, which is not a whole "
+                "number; 3 pages per claim were fetched instead."
+            )
     if mode == "offline":
-        return RetrievalEngine(RetrievalConfig(offline=True, mock=True, fetch_full_text=0))
+        return RetrievalEngine(
+            RetrievalConfig(
+                offline=True, mock=True, fetch_full_text=0, **overrides
+            )
+        )
     if mode == "snapshot":
         path = os.getenv("VERIFY_SNAPSHOT_PATH", DEFAULT_SNAPSHOT)
+        # a replay reads one captured file: no live request to cache and none to make
+        overrides.pop("disk_cache_dir", None)
         return RetrievalEngine(
-            RetrievalConfig(replay_snapshot=path, fetch_full_text=0, use_cache=False)
+            RetrievalConfig(
+                replay_snapshot=path, fetch_full_text=0, use_cache=False, **overrides
+            )
         )
     return RetrievalEngine(
-        RetrievalConfig(fetch_full_text=int(os.getenv("S2_FETCH_FULL_TEXT", "3")))
+        RetrievalConfig(fetch_full_text=fetch_full_text, **overrides)
     )
 
 
 def _resolve_mode(requested: Mode) -> Mode:
-    """Honour an explicit mode; ``auto`` reads the ``VERIFY_*`` environment."""
+    """Honour an explicit mode; ``auto`` reads the ``VERIFY_*`` environment.
+
+    A pinned ``VERIFY_MODE`` exists so a demo can be forced offline by environment
+    alone, without anyone touching the UI. It deliberately does *not* accept
+    ``auto``: that value means "decide per request", and treating it as a pin would
+    silently override an explicit ``offline`` or ``snapshot`` request — which is
+    exactly what a copied ``.env.example`` used to do.
+    """
     forced = os.getenv("VERIFY_MODE", "").strip().lower()
-    if forced in ("auto", "live", "offline", "snapshot"):
+    if forced in ("live", "offline", "snapshot"):
         return forced  # type: ignore[return-value]
     if requested != "auto":
         return requested
@@ -462,9 +529,12 @@ async def run_verify(request: VerifyRequest) -> VerifyResponse:
 
     # ---- S2: retrieve -------------------------------------------------------
     started = time.perf_counter()
+    retrieval_notes: list[str] = []
     try:
         bundles = await aretrieve_for_claims(
-            pipeline_claims, engine=_engine_for(mode), include_extras=True
+            pipeline_claims,
+            engine=_engine_for(mode, retrieval_notes),
+            include_extras=True,
         )
     except Exception as exc:  # the engine is fail-soft internally; this is the last net
         log.warning("retrieval stage failed: %s", exc)
@@ -476,6 +546,7 @@ async def run_verify(request: VerifyRequest) -> VerifyResponse:
             f"S2: retrieval failed entirely ({type(exc).__name__}), so every claim is "
             "reported as insufficient evidence."
         )
+    warnings.extend(retrieval_notes)
     evidence_total = sum(len(bundle.get("evidence") or []) for bundle in bundles)
     if mode == "snapshot":
         warnings.append(

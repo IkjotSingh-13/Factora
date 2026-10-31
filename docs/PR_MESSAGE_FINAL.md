@@ -1,9 +1,10 @@
 # PR: S3 + quote grounding + `/api/verify` + the UI — the MVP path closed end to end
 
-Commit: `45734dd` (currently on `main` locally — push it directly or move it to a branch first:
-`git branch -m verifyai/complete-mvp && git push -u origin verifyai/complete-mvp`)
+Commits: `45734dd` + `da319ef` + the setup-and-polish commit, all on `main` locally and none
+pushed yet — push directly or move them to a branch first:
+`git branch -m verifyai/complete-mvp && git push -u origin verifyai/complete-mvp`
 Base: `cbc4864` (merge PR #7, S2 retrieval + quote guard)
-Suite: `python -m pytest -q` → **393 passed, exit 0** (306 pre-existing + 87 new)
+Suite: `python -m pytest -q` → **415 passed, exit 0** (306 pre-existing + 29 S3 + 26 quote-guard + 34 verify API + 7 QA-set + 11 Ollama wiring + 2 provider tests moved in from the repo root)
 
 ---
 
@@ -23,6 +24,10 @@ The plan's MVP steps 4–6 were unimplemented. This closes them:
 | `data/test_set.json`, `scripts/run_test_set.py`, `docs/TEST_SET.md` | Labelled QA set + runner that records actual outcomes to `data/test_set_results.json`, checked by `tests/test_test_set.py` so the documented numbers cannot drift. |
 | `EvidenceItem.quote_scope` | `full_text` \| `snippet` \| unset — makes "verified against page text" and "verified against the snippet only" different, checkable statements on the wire and on screen. |
 | `docs/{ARCHITECTURE,SCORING,DEMO,TEST_SET,PROGRESS}.md`, `docs/slides.html`, README, `.env.example` | The hour 19–21 deliverables: architecture map, score derivation with a worked example from a real run, 3-minute demo script with a fallback ladder and rehearsal checklist, measured QA results, deck. |
+| `scripts/bootstrap.sh` / `.ps1`, `Makefile`, `docs/SETUP.md` | Setup a reviewer can actually run: one command creates the venv, installs the three requirements files, gets the spaCy model, copies `.env`, runs the suite, and prints the next step. Idempotent, `--ollama` opt-in, no sudo, nothing written outside the repo. |
+| `scripts/check_connections.py` | Per-dependency probe (Ollama server/model/inference, Gemini, Tavily, Fact Check, keyless sources, the running API) with a fix line per problem, `--json` for CI, and it never prints a key. |
+| `tests/test_ollama_wiring.py` | The LLM path asserted against a mock `/api/chat`: `analyzer=llm` reaches the audit, a hallucinated quote is dropped and the lexical answer takes its place, an unreachable server degrades instead of failing, and `LLM_PROVIDER=ollama` really selects `OllamaProvider`. |
+| `docs/screens/*.png` | Four screenshots of the running UI (idle, results, one claim card, mobile), captured headlessly with zero console errors — evidence for the visual state, not a design mock. |
 
 Deleted: `s2_extract/verifyai/**` (36 stale duplicate files) — same change as the unmerged
 `mansimran/cleanup-s2extract` branch, so that branch can be closed.
@@ -50,7 +55,8 @@ requires either a scoped negation, a unit-matched number conflict, or a polarity
 
 | Check | Result |
 |---|---|
-| `python -m pytest -q` | 393 passed, exit 0 |
+| `python -m pytest -q` | 415 passed, exit 0 |
+| `python scripts/check_connections.py` | 4 ok / 4 absent / 0 failed on this machine (no keys, no Ollama here) |
 | `python scripts/check_s3_contract.py --analyze s3_analysis:analyze --replay data/demo_snapshot.json` | "S3 is compatible with the S2 seam"; 10/10 items analysed; **0 fabricated quotes**, 0 empty-but-claimed |
 | `python scripts/run_test_set.py` | offline: **9/9 directions met, 0 invariant violations**, 1 case recorded unmeasured |
 | `python scripts/run_test_set.py --mode snapshot` | real captured sources: **5/9 met, 0 invariant violations** — four misses explained case by case in `docs/TEST_SET.md` |

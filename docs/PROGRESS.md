@@ -29,6 +29,10 @@ exists — not against what a document claims.
 | Architecture doc + slides (hour 19–21 deliverable) | all | **done** | `docs/ARCHITECTURE.md`; `docs/slides.html` (9 slides, speaker notes, zero-build; navigation verified by executing its own script) |
 | Failed sources + entities visible in the UI | Frontend | **done** | audit footer row `sources that failed`, entities chip joined from `grounding.claims`; both asserted by `scripts/ui_render_check.mjs` on a crafted payload |
 | Stale duplicate tree removed | all | **done** | `s2_extract/verifyai/**` (36 files) deleted here — the same change as the unmerged `mansimran/cleanup-s2extract` branch |
+| One-command setup (venv, deps, model, `.env`, suite) | Lead | **done, executed** | `scripts/bootstrap.sh` + `scripts/bootstrap.ps1`, `make install`; run end to end on a clean copy of this tree → `BOOTSTRAP_EXIT=0`, then 415 tests pass in that venv |
+| Connectivity diagnostics for keys / Ollama / sources | Lead | **done** | `scripts/check_connections.py` (ok / degraded / absent / fail, prints no secrets), `make connections`; documented in `docs/SETUP.md` |
+| Ollama path proven, not assumed | Lead | **done** | `tests/test_ollama_wiring.py` (11 tests against a mock `/api/chat`) + `tests/test_ollama_provider.py`; asserts `analyzer=llm`, hallucinated quote dropped, unreachable server → lexical fallback, `LLM_PROVIDER=ollama` really selects `OllamaProvider` |
+| Frontend polish, verified in a browser | Frontend | **done** | `frontend/index.html` rewritten on a token system; headless-Chromium pass = 0 console errors, 0 horizontal overflow at 1440/390 px, no WCAG contrast failure in the palette, 2 px focus ring; `docs/screens/` are screenshots of that run |
 
 ## Cut list — what we deliberately did *not* build
 
@@ -46,12 +50,15 @@ half-finished feature:
 ## Measured state of this tree
 
 ```
-python -m pytest -q            → 393 tests, exit 0
-   (306 pre-existing + 29 S3 + 26 article-quote guard + 25 verify API + 7 QA set)
+python -m pytest -q            → 415 tests (306 pre-existing + 29 S3 + 26 quote-guard + 34 verify API + 7 QA-set + 11 Ollama wiring + 2 provider tests moved in from the repo root)
+   (all offline; no key, no model server, no network)
 scripts/check_s3_contract.py   → compatible, exit 0, 10/10 analysed, 0 fabricated quotes
 scripts/run_test_set.py        → offline 9/9 directions met, 0 invariant violations, 1 unmeasured
 scripts/run_test_set.py snapshot → 5/9 met, 0 violations, 1 unmeasured
+scripts/check_connections.py   → 4 ok, 4 absent (no keys, no Ollama here), 0 failed
+scripts/bootstrap.sh (clean copy) → exit 0; that venv then passes the whole suite
 node scripts/ui_render_check.mjs → passed
+headless Chromium (load, each sample, run in each mode, empty input, URL tab) → 0 errors
 ```
 
 Timings from the same runs: offline ~35–50 ms warm (~280 ms cold), snapshot ~50–320 ms,
