@@ -123,14 +123,30 @@ def test_recorded_results_file_matches_a_fresh_run(offline_run: dict) -> None:
         ), f"{label}: rows unaccounted for"
     assert stored["cases"] == fresh["cases"]
 
-    def measured_rows(data: dict) -> list:
-        return [
-            (row["id"], row.get("verdict"))
-            for row in data["rows"]
-            if row.get("status") == "measured"
-        ]
+    committed_rows = {row["id"]: row for row in committed["rows"]}
+    fresh_rows = {row["id"]: row for row in offline_run["rows"]}
+    assert set(committed_rows) == set(fresh_rows), "the case set itself moved"
 
-    assert measured_rows(committed) == measured_rows(offline_run), "a per-case verdict moved"
+    # Compare what both runs scored. Which cases *are* scored is up to the environment
+    # (see above), so a case measured on one machine and recorded unmeasured on the
+    # other is not a regression — a case whose verdict moved is.
+    moved = []
+    for case_id, before in committed_rows.items():
+        after = fresh_rows[case_id]
+        if before.get("status") != "measured" or after.get("status") != "measured":
+            continue
+        for field in ("verdict", "direction", "direction_match", "n_used"):
+            if before.get(field) != after.get(field):
+                moved.append((case_id, field, before.get(field), after.get(field)))
+    assert not moved, f"recorded results no longer reproduce: {moved}"
+    # and the two runs have to have scored most of the same cases, or this comparison
+    # would be quietly vacuous
+    both = [
+        cid
+        for cid, row in committed_rows.items()
+        if row.get("status") == "measured" and fresh_rows[cid].get("status") == "measured"
+    ]
+    assert len(both) >= 8, f"only {len(both)} cases are comparable between the two runs"
     for row in offline_run["rows"]:
         if row.get("status") == "unmeasured":
             assert row.get("reason"), f"{row['id']} is unmeasured without a reason"
