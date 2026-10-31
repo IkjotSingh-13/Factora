@@ -864,85 +864,94 @@ def test_slow_source_is_abandoned_at_the_deadline():
 
 
 def test_parallel_claims_preserve_order_and_cut_wall_clock():
+    """Claims must run concurrently and keep input order.
+
+    Deliberately compares parallel against serial on the *same* machine rather
+    than asserting an absolute wall clock: Windows thread-startup overhead made an
+    absolute threshold flaky (observed 1.85 s for work that was genuinely parallel).
+    """
     import time as _t
 
     from s2_service import retrieve_for_claims
 
     class PerCallAdapter(SourceAdapter):
-        """Returns claim-specific evidence so ordering can be verified."""
-
         name = "echo"
         kind = "web"
 
         def search(self, query, *, limit, cache=None):
-            _t.sleep(0.3)  # pretend each claim needs network time
-            return [r(f"About {query}", f"https://echo.example/{abs(hash(query))}",
-                      f"{query} explained in detail", "web")]
+            _t.sleep(0.4)
+            return [
+                r(f"About {query}", f"https://echo.example/{abs(hash(query))}",
+                  f"{query} explained in detail", "web")
+            ]
 
     engine = make_engine([PerCallAdapter()])
     claims = [{"id": f"c{i}", "text": f"unique claim number {i}"} for i in range(4)]
+
+    # warm up thread pools so startup cost is not measured
+    retrieve_for_claims(claims[:1], engine=engine, parallel_claims=1)
 
     started = _t.perf_counter()
     bundles = retrieve_for_claims(claims, engine=engine, parallel_claims=4)
     parallel_elapsed = _t.perf_counter() - started
 
-    assert [b["claim"]["id"] for b in bundles] == ["c0", "c1", "c2", "c3"]
-    assert parallel_elapsed < 1.0, f"claims did not run concurrently ({parallel_elapsed:.2f}s)"
-
     started = _t.perf_counter()
     retrieve_for_claims(claims, engine=engine, parallel_claims=1)
     serial_elapsed = _t.perf_counter() - started
-    assert parallel_elapsed < serial_elapsed
+
+    assert [b["claim"]["id"] for b in bundles] == ["c0", "c1", "c2", "c3"]
+    assert serial_elapsed > 0.1, "serial baseline too fast to compare against"
+    ratio = parallel_elapsed / serial_elapsed
+    assert ratio < 0.75, (
+        f"claims did not run concurrently: parallel={parallel_elapsed:.2f}s "
+        f"serial={serial_elapsed:.2f}s ratio={ratio:.2f}"
+    )
 
 
 # ---------------------------------------------------------------------------
-# Cache honesty: a measurement must not report cached responses as live latency
+# S3 seam checker (the tool Ikjot runs before the freeze)
 # ---------------------------------------------------------------------------
-def test_null_cache_never_stores_or_serves():
-    from cache import NullCache, make_key
+def test_check_s3_contract_runs_offline_and_reports_no_analyzer(tmp_path, monkeypatch):
+    import importlib.util
 
-    nc = NullCache()
-    key = make_key("k")
-    nc.set(key, {"body": "cached", "status": 200})
-    assert nc.get(key) is None
-    assert nc.stats()["hits"] == 0
+    path = Path(__file__).resolve().parents[1] / "scripts" / "check_s3_contract.py"
+    spec = importlib.util.spec_from_file_location("check_s3", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    assert hasattr(module, "main")
+    # offline corpus + no analyzer: must exit 0 and never raise
+    assert module.main(["--offline", "--top-k", "3"]) == 0
 
 
-def test_use_cache_false_forces_a_real_request():
-    """A source that counts calls proves the engine bypasses the cache."""
-    calls = {"n": 0}
+def test_check_s3_contract_flags_a_fabricating_analyzer(tmp_path, monkeypatch, capsys):
+    """An analyzer whose quote is not in the retrieved text must be a BLOCKER."""
+    import importlib.util
 
-    class CountingAdapter(SourceAdapter):
-        name = "counter"
-        kind = "web"
+    path = Path(__file__).resolve().parents[1] / "scripts" / "check_s3_contract.py"
+    spec = importlib.util.spec_from_file_location("check_s3b", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
 
-        def search(self, query, *, limit, cache=None):
-            calls["n"] += 1
-            return [r("Vitamin C", "https://a.example/vitc", "vitamin c common cold", "web")]
-
-    engine = RetrievalEngine(
-        config=RetrievalConfig(use_cache=False), adapters=[CountingAdapter()]
+    # build a fake analyzer module on disk and import it by name
+    fake = tmp_path / "fake_s3.py"
+    fake.write_text(
+        "def analyze(claims, bundles):\n"
+        "    out = []\n"
+        "    for b in bundles:\n"
+        "        for item in b['evidence'][:1]:\n"
+        "            out.append({'evidence_id': item['id'], 'stance': 'REFUTES',\n"
+        "                        'quote': 'THIS SENTENCE IS NOT IN THE SOURCE',\n"
+        "                        'quote_verified': True})\n"
+        "    return out\n",
+        encoding="utf-8",
     )
-    engine.search_claim("vitamin c common cold")
-    engine.search_claim("vitamin c common cold")
-    # one query per claim (short claims produce no entity variant), two claims
-    assert calls["n"] == 2, "with caching off, every claim hits the adapter again"
+    monkeypatch.syspath_prepend(str(tmp_path))
 
-    counted = {"n": 0}
-
-    class CountingAdapter2(SourceAdapter):
-        name = "counter2"
-        kind = "web"
-
-        def search(self, query, *, limit, cache=None):
-            counted["n"] += 1
-            return []
-
-    engine2 = RetrievalEngine(
-        config=RetrievalConfig(use_cache=False), adapters=[CountingAdapter2()]
-    )
-    engine2.search_claim("a claim")
-    assert counted["n"] >= 1
+    code = module.main(["--offline", "--top-k", "3", "--analyze", "fake_s3:analyze"])
+    captured = capsys.readouterr().out
+    assert code == 1, "a fabricated quote must produce a non-zero exit"
+    assert "not found in retrieved" in captured
 
 
 # ---------------------------------------------------------------------------

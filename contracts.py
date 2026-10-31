@@ -37,6 +37,14 @@ class Evidence(BaseModel):
     source_kind: SourceKind = "web"
     relevance: float = Field(default=0.0, ge=0.0, le=1.0)
 
+    # --- verification surface (added for the S2 -> S3 handoff) ---------------
+    # text_or_snippet is what the search API returned; full_text is fetched page
+    # text when available. ``text_scope`` tells S3 what a quote may be checked
+    # against, so it can never claim "verified in the source" from a snippet alone.
+    full_text: str = ""
+    text_scope: Literal["snippet", "full_text"] = "snippet"
+    text_scope_reason: Optional[str] = None
+
 
 class SourceStatus(BaseModel):
     """Audit record for one source adapter on one retrieval run."""
@@ -64,6 +72,11 @@ class RetrievalAudit(BaseModel):
     dropped_low_coverage: int = 0
     coverage_by_evidence: dict[str, float] = Field(default_factory=dict)
     mean_coverage: float = 0.0
+    full_text_requested: int = 0
+    full_text_fetched: int = 0
+    full_text_failed: int = 0
+    full_text_chars: int = 0
+    full_text_reasons: list[str] = Field(default_factory=list)
     dropped_duplicates: int = 0
     dropped_over_domain_cap: int = 0
     returned: int = 0
