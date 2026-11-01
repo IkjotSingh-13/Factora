@@ -50,9 +50,21 @@ if (-not $py) { Bad "no Python 3.11+ found. Install from python.org and tick 'Ad
 Ok "using '$py'"
 
 Say "Virtual environment (.venv)"
+# A half-created .venv (interrupted run, no disk space) can leave an interpreter that falls
+# back to the system site-packages. Verify it before installing anything, and verify the
+# install target afterwards, so a broken venv never rewrites a global Python.
+function VenvUsable($dir) {
+  (Test-Path (Join-Path $dir "Scripts\python.exe")) -and (Test-Path (Join-Path $dir "pyvenv.cfg"))
+}
+if ((Test-Path ".venv") -and -not (VenvUsable ".venv")) {
+  Skip ".venv exists but is incomplete - rebuilding it"
+  Remove-Item -Recurse -Force ".venv"
+}
 if (Test-Path ".venv") { Ok "already present" } else { & $py -m venv .venv; Ok "created" }
 $venvPy = Join-Path ".venv" "Scripts\python.exe"
-if (-not (Test-Path $venvPy)) { Bad ".venv\Scripts\python.exe missing - delete .venv and rerun" }
+if (-not (VenvUsable ".venv")) { Bad ".venv is not usable (Scripts\python.exe or pyvenv.cfg missing) - delete .venv and rerun" }
+& $venvPy -c "import sys; raise SystemExit(0 if sys.prefix != sys.base_prefix else 1)"
+if ($LASTEXITCODE -ne 0) { Bad "the venv python is not isolated (sys.prefix == base_prefix) - delete .venv and rerun" }
 & $venvPy -m pip install --quiet --upgrade pip setuptools wheel | Out-Null
 Ok "pip ready"
 

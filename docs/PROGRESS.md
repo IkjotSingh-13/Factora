@@ -29,7 +29,7 @@ exists — not against what a document claims.
 | Architecture doc + slides (hour 19–21 deliverable) | all | **done** | `docs/ARCHITECTURE.md`; `docs/slides.html` (9 slides, speaker notes, zero-build; navigation verified by executing its own script) |
 | Failed sources + entities visible in the UI | Frontend | **done** | audit footer row `sources that failed`, entities chip joined from `grounding.claims`; both asserted by `scripts/ui_render_check.mjs` on a crafted payload |
 | Stale duplicate tree removed | all | **done** | `s2_extract/verifyai/**` (36 files) deleted here — the same change as the unmerged `mansimran/cleanup-s2extract` branch |
-| One-command setup (venv, deps, model, `.env`, suite) | Lead | **done, executed** | `scripts/bootstrap.sh` + `scripts/bootstrap.ps1`, `make install`; run end to end on a clean copy of this tree → `BOOTSTRAP_EXIT=0`, then 415 tests pass in that venv |
+| One-command setup (venv, deps, model, `.env`, suite) | Lead | **done, executed** | `scripts/bootstrap.sh` + `scripts/bootstrap.ps1`, `make install`; run end to end on a clean copy of this tree → `BOOTSTRAP_EXIT=0`, then 416 tests pass in that venv |
 | Connectivity diagnostics for keys / Ollama / sources | Lead | **done** | `scripts/check_connections.py` (ok / degraded / absent / fail, prints no secrets), `make connections`; documented in `docs/SETUP.md` |
 | Ollama path proven, not assumed | Lead | **done** | `tests/test_ollama_wiring.py` (11 tests against a mock `/api/chat`) + `tests/test_ollama_provider.py`; asserts `analyzer=llm`, hallucinated quote dropped, unreachable server → lexical fallback, `LLM_PROVIDER=ollama` really selects `OllamaProvider` |
 | Frontend polish, verified in a browser | Frontend | **done** | `frontend/index.html` rewritten on a token system; headless-Chromium pass = 0 console errors, 0 horizontal overflow at 1440/390 px, no WCAG contrast failure in the palette, 2 px focus ring; `docs/screens/` are screenshots of that run |
@@ -47,10 +47,30 @@ half-finished feature:
 - full-text fetch for *every* result (bounded by `S2_FETCH_FULL_TEXT`, so some quotes are
   verified against the snippet, and the UI says which).
 
+## Two environment-sensitive things found by running the installer for real
+
+1. **`bootstrap.sh` could not survive a half-built `.venv`.** If `python -m venv` is
+   interrupted (a full disk does exactly this), the directory exists, activation appears to
+   succeed, and `python` silently resolves to the *system* interpreter — the next `pip
+   install` then rewrites someone's global site-packages. The script now checks that a
+   `.venv` is usable (`bin/python` **and** `pyvenv.cfg`), rebuilds it when it is not, and
+   refuses to install unless `sys.prefix != sys.base_prefix`. Each of the three guards was
+   exercised: rebuild path, "could not activate" exit, and "refusing to install into the
+   system interpreter" exit — the last two stop before pip is ever invoked.
+2. **`tests/test_s2.py::test_slow_source_is_abandoned_at_the_deadline` measured the wrong
+   stage once `trafilatura` was actually installed.** The engine's source deadline fires at
+   0.5 s as designed, but the run then entered its separately bounded page-text stage and
+   spent `fulltext_deadline_s` (4 s) trying to resolve the stub's fake `enc.example` URL —
+   so `elapsed` was 4.5 s against a 1.5 s assertion. The test now disables fetching
+   (`fetch_full_text=0`), which is what it means to test, and a new test asserts the
+   page-text stage is bounded by its own budget and leaves `text_scope` honest. Verified by
+   mutation: ignoring `fulltext_deadline_s` in `s2_retrieval.py` fails that new test, and
+   restoring it makes 416 pass.
+
 ## Measured state of this tree
 
 ```
-python -m pytest -q            → 415 tests (306 pre-existing + 29 S3 + 26 quote-guard + 34 verify API + 7 QA-set + 11 Ollama wiring + 2 provider tests moved in from the repo root)
+python -m pytest -q            → 416 tests (306 pre-existing + 1 new S2 bound test + 29 S3 + 26 quote-guard + 34 verify API + 7 QA-set + 11 Ollama wiring + 2 provider tests moved in from the repo root)
    (all offline; no key, no model server, no network)
 scripts/check_s3_contract.py   → compatible, exit 0, 10/10 analysed, 0 fabricated quotes
 scripts/run_test_set.py        → offline 9/9 directions met, 0 invariant violations, 1 unmeasured

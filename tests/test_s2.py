@@ -849,7 +849,12 @@ def test_slow_source_is_abandoned_at_the_deadline():
         [r("Vitamin C", "https://enc.example/vitc", "vitamin c prevents the common cold", "encyclopedia")],
     )
     slow = SlowAdapter(delay=3.0)
-    engine = make_engine([fast, slow])
+    # fetch_full_text=0 because the point of this test is source abandonment. Left on,
+    # the engine would also run its (separately bounded) page-text stage against the
+    # stub's fake `enc.example` URL, whose DNS lookup then eats the 4 s
+    # fulltext_deadline_s tail - and the assertion below would be measuring that
+    # instead of the deadline it names.
+    engine = make_engine([fast, slow], fetch_full_text=0)
     engine.config.total_deadline_s = 0.5
 
     started = _t.perf_counter()
@@ -861,6 +866,40 @@ def test_slow_source_is_abandoned_at_the_deadline():
     statuses = {s.name: s.status for s in result.audit.sources}
     assert statuses["slow"] == "timeout"
     assert any("deadline" in note for note in result.audit.notes)
+
+
+def test_full_text_stage_is_bounded_by_its_own_deadline(monkeypatch):
+    """A hanging page fetch must cost time, and nothing more than its budget.
+
+    `total_deadline_s` covers the *sources*. Page text for quote verification has its own
+    budget (`fulltext_deadline_s`) and its own abandonment rule, because the honest outcome
+    of an unfetched page is `text_scope="snippet"` - never a quote claimed against full text.
+    """
+    import time as _t
+
+    import fulltext as _fulltext
+
+    fast = StubAdapter(
+        "fast", "encyclopedia",
+        [r("Vitamin C", "https://enc.example/vitc", "vitamin c prevents the common cold", "encyclopedia")],
+    )
+    engine = make_engine([fast], fetch_full_text=1)
+    engine.config.fulltext_deadline_s = 0.4
+
+    def hanging_fetch(url, **kwargs):
+        _t.sleep(30)  # a DNS lookup or a server that never answers
+        raise AssertionError("unreachable")
+
+    monkeypatch.setattr(_fulltext, "fetch_page_text", hanging_fetch)
+
+    started = _t.perf_counter()
+    result = engine.search_claim("vitamin c common cold")
+    elapsed = _t.perf_counter() - started
+
+    assert elapsed < 2.5, f"full-text stage not bounded ({elapsed:.2f}s)"
+    assert result.evidence, "the claim must still come back with its snippet evidence"
+    for item in result.evidence:
+        assert item.text_scope != "full_text", "an unfetched page must not claim full text"
 
 
 def test_parallel_claims_preserve_order_and_cut_wall_clock():

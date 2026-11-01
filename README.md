@@ -106,7 +106,7 @@ deck.
 
 ```bash
 make checks                 # everything below, in order, or run them one at a time:
-python -m pytest -q                                            # 415 tests
+python -m pytest -q                                            # 416 tests
 python scripts/doctor.py                                       # env + wiring report
 python scripts/check_connections.py                            # ollama / keys / sources / API
 python scripts/check_s3_contract.py --analyze s3_analysis:analyze \
@@ -123,7 +123,7 @@ analyzer is compatible with the evidence bundle shape, and `run_test_set.py` wri
 re-runs the set and fails if the committed results no longer match, so no documented number can
 drift from the code.
 
-Latest measured state on this checkout: **415 tests pass**; seam gate reports "S3 is compatible
+Latest measured state on this checkout: **416 tests pass**; seam gate reports "S3 is compatible
 with the S2 seam" with 10/10 evidence items analysed and 0 fabricated quotes; QA set offline
 **9/9 directions met, 0 invariant violations, 1 case unmeasured**, on captured real sources
 (snapshot) 5/9; `node scripts/ui_render_check.mjs` and a headless-browser pass over the UI both

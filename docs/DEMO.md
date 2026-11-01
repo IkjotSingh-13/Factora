@@ -122,7 +122,7 @@ fullscreen, print it for a handout. It is ordered for the 3-minute version above
 
 ## Rehearsal checklist (run it twice, out loud, before you submit)
 
-- [ ] `python -m pytest -q` → 415 passed, exit 0. If it is not, you are demoing a broken build.
+- [ ] `python -m pytest -q` → 416 passed, exit 0. If it is not, you are demoing a broken build.
 - [ ] `python scripts/check_connections.py` → 0 `FAIL` rows. `absent` is fine (no key, no Ollama);
       a `FAIL` is a dependency that is configured and broken, which is the one thing to fix first.
 - [ ] Server starts from a **fresh venv** on the presenting machine, not just yours.
@@ -137,7 +137,7 @@ fullscreen, print it for a handout. It is ordered for the 3-minute version above
 
 | Claim you can make | Source |
 | --- | --- |
-| "415 tests pass, exit 0" | `python -m pytest -q` — 415 tests (306 pre-existing + 29 S3 + 26 quote-guard + 34 verify API + 7 QA-set + 11 Ollama wiring + 2 provider tests moved in from the repo root) |
+| "416 tests pass, exit 0" | `python -m pytest -q` — 416 tests (306 pre-existing + 1 new S2 bound test + 29 S3 + 26 quote-guard + 34 verify API + 7 QA-set + 11 Ollama wiring + 2 provider tests moved in from the repo root) |
 | "9 of 9 scorable cases pointed the expected way, with 0 invariant violations" | `data/test_set_results.json`, `mode=offline` |
 | "5 of 9 on captured real sources — retrieval noise costs us 4 cases" | `python scripts/run_test_set.py --mode snapshot` |
 | "10/10 evidence items analysed, 0 fabricated quotes, seam compatible" | `python scripts/check_s3_contract.py --analyze s3_analysis:analyze --replay data/demo_snapshot.json` |

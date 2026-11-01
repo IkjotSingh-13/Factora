@@ -4,7 +4,7 @@ Commits: `45734dd` + `da319ef` + the setup-and-polish commit, all on `main` loca
 pushed yet — push directly or move them to a branch first:
 `git branch -m verifyai/complete-mvp && git push -u origin verifyai/complete-mvp`
 Base: `cbc4864` (merge PR #7, S2 retrieval + quote guard)
-Suite: `python -m pytest -q` → **415 passed, exit 0** (306 pre-existing + 29 S3 + 26 quote-guard + 34 verify API + 7 QA-set + 11 Ollama wiring + 2 provider tests moved in from the repo root)
+Suite: `python -m pytest -q` → **416 passed, exit 0** (306 pre-existing + 29 S3 + 26 quote-guard + 34 verify API + 7 QA-set + 11 Ollama wiring + 2 provider tests moved in from the repo root)
 
 ---
 
@@ -55,7 +55,7 @@ requires either a scoped negation, a unit-matched number conflict, or a polarity
 
 | Check | Result |
 |---|---|
-| `python -m pytest -q` | 415 passed, exit 0 |
+| `python -m pytest -q` | 416 passed, exit 0 |
 | `python scripts/check_connections.py` | 4 ok / 4 absent / 0 failed on this machine (no keys, no Ollama here) |
 | `python scripts/check_s3_contract.py --analyze s3_analysis:analyze --replay data/demo_snapshot.json` | "S3 is compatible with the S2 seam"; 10/10 items analysed; **0 fabricated quotes**, 0 empty-but-claimed |
 | `python scripts/run_test_set.py` | offline: **9/9 directions met, 0 invariant violations**, 1 case recorded unmeasured |

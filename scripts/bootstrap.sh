@@ -47,16 +47,29 @@ EOF
 ok "$("$PY" -V) at $(command -v "$PY")"
 
 say "Virtual environment (.venv)"
+# A .venv left half-built (interrupted run, full disk) still *looks* present but has no
+# usable interpreter; activating it silently leaves `python` resolving to the SYSTEM one,
+# and the pip install below would then rewrite someone's global site-packages. So the venv
+# is verified, rebuilt if broken, and the interpreter is checked before anything installs.
+venv_ok() { [ -x .venv/bin/python ] && [ -f .venv/pyvenv.cfg ]; }
+if [ -d .venv ] && ! venv_ok; then
+  warn ".venv exists but is incomplete - rebuilding it"
+  rm -rf .venv
+fi
 if [ -d .venv ]; then
   ok "already present"
 else
-  "$PY" -m venv .venv || fail "could not create .venv (debian/ubuntu: apt install python3-venv)"
+  "$PY" -m venv .venv \
+    || fail "could not create .venv (debian/ubuntu: apt install python3-venv; if the disk is full, that is the error - check 'df -h .')"
+  venv_ok || fail ".venv was created but is not usable - delete .venv and re-run"
   ok "created"
 fi
 # shellcheck disable=SC1091
-. .venv/bin/activate
+. .venv/bin/activate || fail "could not activate .venv - delete it and re-run"
+python -c 'import sys; raise SystemExit(0 if sys.prefix != sys.base_prefix else 1)' \
+  || fail "the active python is NOT inside .venv; refusing to install into the system interpreter. Delete .venv and re-run."
 python -m pip install --quiet --upgrade pip setuptools wheel >/dev/null 2>&1 || true
-ok "pip $(python -m pip --version | awk '{print $2}')"
+ok "pip $(python -m pip --version | awk '{print $2}') (isolated in .venv)"
 
 say "Dependencies"
 # The three stage files together: backend (fastapi, pydantic, httpx, pytest) +
