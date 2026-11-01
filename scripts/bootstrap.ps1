@@ -38,18 +38,50 @@ function Skip($m) { Write-Host "  skip $m" -ForegroundColor DarkYellow }
 function Bad($m)  { Write-Host "  FAIL $m" -ForegroundColor Red; throw $m }
 
 Say "Python"
-$py = $null
-foreach ($c in @("py -3", "python", "python3")) {
-    $name = ($c -split " ")[0]
-    if (Get-Command $name -ErrorAction SilentlyContinue) {
-        $probe = if ($c -eq "py -3") { & py -3 -c "import sys;print(sys.version_info>=(3,11))" 2>$null } else { & $name -c "import sys;print(sys.version_info>=(3,11))" 2>$null }
-        if ($LASTEXITCODE -eq 0 -and "$probe".Trim() -eq "True") { $py = $c; break }
-        if ($LASTEXITCODE -eq 0) { $py = $c; break }
+# A candidate can be two tokens ("py -3"), and `& $py -V` with $py = "py -3" makes
+# PowerShell look for one program literally named "py -3" - which is exactly the
+# "The term 'py -3' is not recognized" crash on a machine where python.org installed the
+# launcher but no python.exe on PATH. Command name and arguments stay in separate
+# variables from here, and the version test actually gates instead of being decorative.
+$pyName = $null
+$pyExe = $null
+$pyArgs = @()
+$pyVer = ""
+$seen = @()
+foreach ($cand in @("py -3", "python", "python3")) {
+    $bits = @($cand -split " ")
+    $n = $bits[0]
+    $a = @($bits | Select-Object -Skip 1)
+    if (-not (Get-Command $n -ErrorAction SilentlyContinue)) { continue }
+    $out = ""
+    try { $out = & $n @a -c "import sys;print('.'.join(map(str, sys.version_info[:3])))" 2>$null } catch { continue }   # name is fine here: this is before any helper exists
+    if ($LASTEXITCODE -ne 0) { continue }    # the Microsoft Store stub lands here: on PATH, and not Python
+    $out = "$out".Trim()
+    $m = [regex]::Match($out, "^(\d+)\.(\d+)")
+    if (-not $m.Success) { continue }
+    $maj = [int]$m.Groups[1].Value
+    $min = [int]$m.Groups[2].Value
+    $seen += "$cand = $out"
+    if ($maj -gt 3 -or ($maj -eq 3 -and $min -ge 11)) {
+        $pyName = $n; $pyArgs = $a; $pyVer = $out
+        # Invoke by resolved path. Calling `& py` by name is how a helper called `Py`
+        # becomes an infinite loop: command lookup is case-insensitive, so on a machine
+        # where `py` stops being on PATH, `& py` finds the FUNCTION named Py.
+        $cmd = Get-Command $n -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($cmd -and $cmd.Source) { $pyExe = $cmd.Source } else { $pyExe = $n }
+        break
     }
 }
-if (-not $py) { Bad "no Python 3.11+ found. Install from python.org and tick 'Add to PATH'." }
-& $py -V
-Ok "using '$py'"
+if (-not $pyName) {
+    if ($seen.Count -gt 0) {
+        Bad ("Python 3.11+ is required. Found: " + ($seen -join ", ") + ". Install 3.11+ from python.org and tick 'Add python.exe to PATH'.")
+    } else {
+        Bad "no usable python or py launcher on PATH. Install Python 3.11+ from python.org (tick 'Add python.exe to PATH'), then rerun this."
+    }
+}
+function Invoke-VenvBootstrap([string[]]$pyCmdArgs) { & $script:pyExe @script:pyArgs @pyCmdArgs }
+$shown = if ($pyName -eq $pyExe) { $pyName } else { "$pyName (-> $pyExe)" }
+Ok "using $shown $pyArgs - Python $pyVer"
 
 Say "Virtual environment (.venv)"
 # A half-created .venv (interrupted run, no disk space) can leave an interpreter that falls
@@ -62,7 +94,7 @@ if ((Test-Path ".venv") -and -not (VenvUsable ".venv")) {
   Skip ".venv exists but is incomplete - rebuilding it"
   Remove-Item -Recurse -Force ".venv"
 }
-if (Test-Path ".venv") { Ok "already present" } else { & $py -m venv .venv; Ok "created" }
+if (Test-Path ".venv") { Ok "already present" } else { Invoke-VenvBootstrap @("-m", "venv", ".venv"); if (VenvUsable ".venv") { Ok "created" } else { Bad "python -m venv ran but .venv is not usable - see the fix line below" } }
 $venvPy = Join-Path ".venv" "Scripts\python.exe"
 if (-not (VenvUsable ".venv")) { Bad ".venv is not usable (Scripts\python.exe or pyvenv.cfg missing) - delete .venv and rerun" }
 & $venvPy -c "import sys; raise SystemExit(0 if sys.prefix != sys.base_prefix else 1)"

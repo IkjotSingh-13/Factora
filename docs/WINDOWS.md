@@ -36,15 +36,22 @@ scripts\setup_windows.bat
 That creates `.venv`, installs `requests`, `pydantic`, `pytest`, copies
 `.env.example` → `.env`, runs the 27 offline tests and does an offline retrieval.
 
-Manual equivalent:
+Manual equivalent - use `py -3` wherever it says `python` if `python` is not on your PATH
+(that is the state a python.org install leaves when "Add python.exe to PATH" was not ticked;
+`Get-Command py, python` shows which one you have):
 
 ```powershell
-python -m venv .venv
+py -3 -m venv .venv        # or: python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 Copy-Item .env.example .env
 python -m pytest -q
 ```
+
+If `python` is only findable as `py -3` *outside* the venv, note that activation puts the venv's
+own `python.exe` on PATH - so inside the activated prompt, `python` is the right command and `py`
+is not needed.
 
 Then, every new terminal: `.\.venv\Scripts\Activate.ps1`
 
@@ -221,6 +228,8 @@ Invoke-RestMethod -Uri http://localhost:8000/api/verify -Method Post -ContentTyp
 | Symptom | Cause | Fix |
 |---|---|---|
 | `Activate.ps1 cannot be loaded` | execution policy | `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` |
+| `The term 'py -3' is not recognized as the name of a cmdlet...` from `bootstrap.ps1`, printed right after `==> Python`, and no `.venv` appears | the installer's interpreter lookup stored `"py -3"` in one variable and invoked it as `& $py` - PowerShell reads that as a single program named `py -3`. Fixed in this repo: candidate, arguments and the resolved path are kept apart, the version test actually gates, and a machine with no usable interpreter now gets `no usable python or py launcher on PATH` instead of a crash. On an older copy: use the §1 manual commands |
+| `python -m venv` prints `ensurepip is not available` | a distro Python without venv support (happens with the Store/`apt` builds, not the python.org one) | install `python3-venv`, or use the python.org installer and tick 'Add python.exe to PATH' |
 | `Missing argument in parameter list` / `Missing closing '}'` while running a .ps1 | non-ASCII character (em dash, curly quote) inside a .ps1 string - PowerShell 5.1 treats smart quotes as string delimiters | fixed in this repo; keep .ps1 files ASCII-only (a test enforces it), or use `scripts\setup_windows.bat` |
 | `UnicodeEncodeError` | console codepage | `$env:PYTHONUTF8="1"` then rerun |
 | JSON file unreadable | `>` redirect wrote UTF-16 | use `--out out.json` |
