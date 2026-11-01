@@ -1,0 +1,1188 @@
+{
+  "schema_version": "1.0",
+  "mode": "mock",
+  "demo_label": "Cached demo result",
+  "fixture_note": "Mock mode. Evidence passages are local fixtures written for the demo; links point to demo:// and do not resolve. All counters below come from this fixture, not from a live run.",
+  "run": {
+    "run_id": "FA-1031-4417",
+    "mode": "mock",
+    "engine": "cached demo fixture (no live calls)",
+    "started_at": "2026-10-31T09:12:04Z",
+    "finished_at": "2026-10-31T09:12:08Z",
+    "duration_ms": 4180,
+    "adapters": [
+      {
+        "name": "science.nasa.gov",
+        "kind": "Government agency",
+        "status": "ok",
+        "results": 9
+      },
+      {
+        "name": "en.wikipedia.org",
+        "kind": "Encyclopedia",
+        "status": "ok",
+        "results": 6
+      },
+      {
+        "name": "britannica.com",
+        "kind": "Encyclopedia",
+        "status": "ok",
+        "results": 5
+      },
+      {
+        "name": "eso.org",
+        "kind": "Research organisation",
+        "status": "ok",
+        "results": 3
+      },
+      {
+        "name": "google_fact_check",
+        "kind": "Fact check index",
+        "status": "timeout",
+        "results": 0
+      }
+    ]
+  },
+  "article": {
+    "title": "Looking at the Moon, landing on it again",
+    "origin": "Pasted text",
+    "source_url": null,
+    "words": 236,
+    "submitted_at": "2026-10-31T09:12:04Z",
+    "excerpt": "For most of human history, the Moon was something to look at and nothing more."
+  },
+  "disclaimer": "Evidence strength describes how much independent, credible, relevant material was found. It is not the probability that a claim is true. Direction of evidence is reported separately.",
+  "summary": {
+    "claims_total": 6,
+    "claims_checked": 6,
+    "status_counts": {
+      "supported": 3,
+      "contested": 2,
+      "insufficient": 1
+    },
+    "evidence_items": 15,
+    "evidence_clusters": 11,
+    "sources_used": 4,
+    "sources_failed": 1,
+    "quotes_dropped": 2,
+    "stance_counts": {
+      "supports": 9,
+      "refutes": 1,
+      "neutral": 5
+    }
+  },
+  "method": {
+    "stages": [
+      {
+        "id": "S1",
+        "name": "Claim extraction",
+        "engine": "instruction-tuned 8B model, temperature 0",
+        "detail": "9 candidate sentences passed the checkability filter. 2 opinion or prediction sentences were removed, 1 failed the article-quote guard. 6 claims kept."
+      },
+      {
+        "id": "S2",
+        "name": "Retrieval",
+        "engine": "BM25 + embedding similarity, reciprocal rank fusion",
+        "detail": "Queries were literal keyword strings plus one entity expansion. 5 adapters queried, 1 timed out, 14 passages normalised, duplicates capped at 2 per domain."
+      },
+      {
+        "id": "S3",
+        "name": "Stance analysis",
+        "engine": "NLI model with structured output",
+        "detail": "Each passage labelled SUPPORTS, REFUTES or NEUTRAL with an exact source quote and a one-line rationale. 2 quotes failed the substring guard and were dropped."
+      },
+      {
+        "id": "S4",
+        "name": "Scoring",
+        "engine": "deterministic, weights frozen before the run",
+        "detail": "Five components computed per claim, weights printed in the ledger below. Direction of evidence is kept out of the strength score."
+      },
+      {
+        "id": "S5",
+        "name": "Report and audit",
+        "engine": "schema-validated JSON",
+        "detail": "Claim reports assembled, failed sources listed, quote drops counted. No verdict is issued where the evidence does not support one."
+      }
+    ],
+    "omitted": [
+      {
+        "name": "Cross-encoder reranking",
+        "reason": "Cut to protect demo stability inside 24 hours. Ranking uses BM25 plus embedding similarity and RRF."
+      },
+      {
+        "name": "Vector database",
+        "reason": "The session corpus fits in memory. Qdrant was on the cut list and stayed there."
+      },
+      {
+        "name": "Confidence intervals",
+        "reason": "Bootstrap intervals were cut. The score is a weighted sum with printed components, nothing more."
+      },
+      {
+        "name": "Full-text fetch for every result",
+        "reason": "Only the top passages were fetched. The rest stayed as snippets and are marked as such."
+      }
+    ],
+    "engines": {
+      "extraction": "instruction-tuned 8B, temperature 0",
+      "stance": "NLI model, structured output",
+      "ranking": "BM25 + dense embedding + RRF"
+    }
+  },
+  "default_claim_id": "cl-001",
+  "claims": [
+    {
+      "id": "cl-001",
+      "folio": "01",
+      "text": "Neil Armstrong and Buzz Aldrin set foot on the lunar surface on 20 July 1969, while Michael Collins stayed in orbit.",
+      "type": "Historical event",
+      "article_quote": "Then, on 20 July 1969, Neil Armstrong and Buzz Aldrin set foot on the lunar surface while Michael Collins stayed in orbit, and the Moon became a place people had been.",
+      "article_quote_position": "Paragraph 1, sentence 2",
+      "time_sensitive": false,
+      "entities": [
+        "Neil Armstrong",
+        "Buzz Aldrin",
+        "Michael Collins",
+        "Apollo 11"
+      ],
+      "verdict": {
+        "label": "Largely supported",
+        "tone": "support",
+        "one_line": "Three independent sources describe the same landing date, crew and orbital role. One source adds timeline context without disagreeing."
+      },
+      "stance_direction": {
+        "lean": "supports",
+        "counts": {
+          "supports": 3,
+          "refutes": 0,
+          "neutral": 1
+        },
+        "summary": "3 supporting, 0 refuting, 1 contextual"
+      },
+      "evidence_strength": 0.862,
+      "strength_label": "High",
+      "scores": {
+        "c": {
+          "label": "Source credibility",
+          "value": 0.92,
+          "weight": 0.3,
+          "points": 0.276,
+          "reason": "A government space agency plus two long-running reference works.",
+          "inputs": "science.nasa.gov (agency), en.wikipedia.org (encyclopedia), britannica.com (encyclopedia), space.com (trade news)"
+        },
+        "r": {
+          "label": "Evidence relevance",
+          "value": 0.9,
+          "weight": 0.3,
+          "points": 0.27,
+          "reason": "Passages answer the claim directly: date, crew names, who stayed in orbit.",
+          "inputs": "mean relevance 0.90 across 4 passages, lowest 0.82"
+        },
+        "a": {
+          "label": "Independent agreement",
+          "value": 0.75,
+          "weight": 0.2,
+          "points": 0.15,
+          "reason": "Two publishers verify the claim independently. The third passage repeats agency material, so it adds little agreement.",
+          "inputs": "3 clusters, 3 domains, agreement on date and crew, no contradicting cluster"
+        },
+        "t": {
+          "label": "Freshness",
+          "value": 0.8,
+          "weight": 0.1,
+          "points": 0.08,
+          "reason": "The claim is fixed in 1969, so publication dates matter less. The newest source is from this year.",
+          "inputs": "newest 2026-04, oldest 2024-11, claim marked not time sensitive"
+        },
+        "k": {
+          "label": "Contextual consistency",
+          "value": 0.86,
+          "weight": 0.1,
+          "points": 0.086,
+          "reason": "No surrounding sentence changes the meaning of the claim.",
+          "inputs": "0 context gaps flagged"
+        },
+        "s": {
+          "value": 0.862,
+          "formula": "0.30 C + 0.30 R + 0.20 A + 0.10 T + 0.10 K",
+          "result": "0.276 + 0.270 + 0.150 + 0.080 + 0.086 = 0.862"
+        }
+      },
+      "insufficient": {
+        "is": false,
+        "reasons": []
+      },
+      "evidence": [
+        {
+          "cluster_id": 1,
+          "url": "demo://factora/passage/apollo-11-overview",
+          "domain": "science.nasa.gov",
+          "title": "Apollo 11 mission overview",
+          "text_or_snippet": "Apollo 11 launched on 16 July 1969 and landed on the Moon on 20 July 1969. Neil Armstrong and Edwin (Buzz) Aldrin descended to the surface in the lunar module Eagle while Michael Collins remained in lunar orbit aboard Columbia.",
+          "published_at": "2026-04-18",
+          "source_kind": "Government agency",
+          "relevance": 0.95,
+          "stance": "SUPPORTS",
+          "analysis": {
+            "quote": "Neil Armstrong and Edwin (Buzz) Aldrin descended to the surface in the lunar module Eagle while Michael Collins remained in lunar orbit aboard Columbia.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Names, roles and the orbital position of Collins all match the claim.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:12:05Z",
+          "word_count": 231
+        },
+        {
+          "cluster_id": 1,
+          "url": "demo://factora/passage/apollo-11-britannica",
+          "domain": "britannica.com",
+          "title": "Apollo 11, lunar landing",
+          "text_or_snippet": "On 20 July 1969 the lunar module Eagle touched down in the Sea of Tranquillity. Six hours later Armstrong became the first person to step onto the lunar surface, and Aldrin followed nineteen minutes after him.",
+          "published_at": "2025-07-01",
+          "source_kind": "Encyclopedia",
+          "relevance": 0.9,
+          "stance": "SUPPORTS",
+          "analysis": {
+            "quote": "On 20 July 1969 the lunar module Eagle touched down in the Sea of Tranquillity. Six hours later Armstrong became the first person to step onto the lunar surface, and Aldrin followed nineteen minutes after him.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Independent confirmation of the date and of both men reaching the surface.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:12:05Z",
+          "word_count": 178
+        },
+        {
+          "cluster_id": 2,
+          "url": "demo://factora/passage/apollo-11-wikipedia",
+          "domain": "en.wikipedia.org",
+          "title": "Apollo 11, Wikipedia",
+          "text_or_snippet": "Apollo 11 was the first crewed Moon landing, carried out by NASA on 20 July 1969. Commander Neil Armstrong and lunar module pilot Buzz Aldrin landed the Apollo Lunar Module Eagle; command module pilot Michael Collins flew the command module Columbia alone in lunar orbit.",
+          "published_at": "2026-09-02",
+          "source_kind": "Encyclopedia",
+          "relevance": 0.88,
+          "stance": "SUPPORTS",
+          "analysis": {
+            "quote": "Commander Neil Armstrong and lunar module pilot Buzz Aldrin landed the Apollo Lunar Module Eagle; command module pilot Michael Collins flew the command module Columbia alone in lunar orbit.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Repeats the same crew split. Drawn largely from agency material, so treated as one cluster with the passage above.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:12:05Z",
+          "word_count": 412
+        },
+        {
+          "cluster_id": 3,
+          "url": "demo://factora/passage/moon-landing-context",
+          "domain": "space.com",
+          "title": "Why Apollo 11 still sets the reference point",
+          "text_or_snippet": "The first landing established a template that later crews followed: two astronauts on the surface, one in orbit. Collins never walked on the Moon, a fact that is often lost when the mission is retold as a three-person landing.",
+          "published_at": "2025-07-20",
+          "source_kind": "Trade news",
+          "relevance": 0.82,
+          "stance": "NEUTRAL",
+          "analysis": {
+            "quote": "Collins never walked on the Moon, a fact that is often lost when the mission is retold as a three-person landing.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Adds nuance about how the mission is described but takes no position on the claim itself.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:12:06Z",
+          "word_count": 96
+        }
+      ],
+      "audit": {
+        "sources_queried": [
+          "science.nasa.gov",
+          "en.wikipedia.org",
+          "britannica.com",
+          "space.com"
+        ],
+        "results_retrieved": 9,
+        "results_used": 4,
+        "quotes_checked": 4,
+        "quotes_dropped": 0,
+        "claims_dropped": 0,
+        "notes": [
+          "One snippet from a content-farm domain was retrieved and discarded by the domain filter.",
+          "The Britannica and NASA passages share wording because both draw on the mission press kit. They were merged into cluster 1 for the agreement term."
+        ]
+      }
+    },
+    {
+      "id": "cl-002",
+      "folio": "02",
+      "text": "Apollo 12 landed at the Ocean of Storms in November 1969, and Eugene Cernan left the last footprint in December 1972.",
+      "type": "Historical event",
+      "article_quote": "Apollo 12 landed in November 1969 at Ocean of Storms, and five more crews followed; Eugene Cernan left the last footprint in December 1972.",
+      "article_quote_position": "Paragraph 1, sentence 4",
+      "time_sensitive": false,
+      "entities": [
+        "Apollo 12",
+        "Apollo 17",
+        "Eugene Cernan",
+        "Ocean of Storms"
+      ],
+      "verdict": {
+        "label": "Broadly supported",
+        "tone": "support",
+        "one_line": "The landing site and both dates are confirmed. The count between them is approximate, which the claim does not depend on."
+      },
+      "stance_direction": {
+        "lean": "supports",
+        "counts": {
+          "supports": 2,
+          "refutes": 0,
+          "neutral": 1
+        },
+        "summary": "2 supporting, 0 refuting, 1 contextual"
+      },
+      "evidence_strength": 0.78,
+      "strength_label": "Moderate to high",
+      "scores": {
+        "c": {
+          "label": "Source credibility",
+          "value": 0.88,
+          "weight": 0.3,
+          "points": 0.264,
+          "reason": "Agency archive and reference encyclopedia. One blog was excluded.",
+          "inputs": "science.nasa.gov (agency), britannica.com (encyclopedia), en.wikipedia.org (encyclopedia)"
+        },
+        "r": {
+          "label": "Evidence relevance",
+          "value": 0.84,
+          "weight": 0.3,
+          "points": 0.252,
+          "reason": "One passage confirms Apollo 12 only, one confirms the final crew only. Neither covers both halves in one sentence.",
+          "inputs": "mean relevance 0.84, split across two sub-claims"
+        },
+        "a": {
+          "label": "Independent agreement",
+          "value": 0.62,
+          "weight": 0.2,
+          "points": 0.124,
+          "reason": "Two domains, two clusters. Enough to agree, thin enough to keep the score below the first claim.",
+          "inputs": "2 clusters, 2 domains, no contradicting source"
+        },
+        "t": {
+          "label": "Freshness",
+          "value": 0.78,
+          "weight": 0.1,
+          "points": 0.078,
+          "reason": "Historical claim, so age is not a penalty. Dates updated in 2025 and 2026.",
+          "inputs": "newest 2026-01, oldest 2025-06"
+        },
+        "k": {
+          "label": "Contextual consistency",
+          "value": 0.62,
+          "weight": 0.1,
+          "points": 0.062,
+          "reason": "The phrase five more crews followed sits next to the claim and is loose: six crews landed after Apollo 11, including Apollo 12.",
+          "inputs": "1 context gap flagged"
+        },
+        "s": {
+          "value": 0.78,
+          "formula": "0.30 C + 0.30 R + 0.20 A + 0.10 T + 0.10 K",
+          "result": "0.264 + 0.252 + 0.124 + 0.078 + 0.062 = 0.780"
+        }
+      },
+      "insufficient": {
+        "is": false,
+        "reasons": []
+      },
+      "evidence": [
+        {
+          "cluster_id": 1,
+          "url": "demo://factora/passage/apollo-12",
+          "domain": "science.nasa.gov",
+          "title": "Apollo 12: the second landing",
+          "text_or_snippet": "Apollo 12 touched down in the Ocean of Storms on 19 November 1969. Charles Conrad and Alan Bean spent just over 31 hours on the surface while Richard Gordon orbited above.",
+          "published_at": "2025-11-14",
+          "source_kind": "Government agency",
+          "relevance": 0.91,
+          "stance": "SUPPORTS",
+          "analysis": {
+            "quote": "Apollo 12 touched down in the Ocean of Storms on 19 November 1969.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Site and month match the claim.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:12:06Z",
+          "word_count": 164
+        },
+        {
+          "cluster_id": 2,
+          "url": "demo://factora/passage/apollo-17",
+          "domain": "britannica.com",
+          "title": "Apollo 17, final crewed landing",
+          "text_or_snippet": "Apollo 17 lifted off from the Moon on 14 December 1972. Eugene Cernan, the mission commander, was the last of the twelve astronauts to leave the surface.",
+          "published_at": "2026-01-09",
+          "source_kind": "Encyclopedia",
+          "relevance": 0.87,
+          "stance": "SUPPORTS",
+          "analysis": {
+            "quote": "Eugene Cernan, the mission commander, was the last of the twelve astronauts to leave the surface.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Confirms the final footprint and the month of departure.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:12:06Z",
+          "word_count": 142
+        },
+        {
+          "cluster_id": 3,
+          "url": "demo://factora/passage/crewed-landings-list",
+          "domain": "en.wikipedia.org",
+          "title": "List of missions to the Moon",
+          "text_or_snippet": "Six crewed missions landed between 1969 and 1972: Apollo 11, 12, 14, 15, 16 and 17. Apollo 13 did not land after an oxygen tank failure.",
+          "published_at": "2025-06-21",
+          "source_kind": "Encyclopedia",
+          "relevance": 0.71,
+          "stance": "NEUTRAL",
+          "analysis": {
+            "quote": "Six crewed missions landed between 1969 and 1972: Apollo 11, 12, 14, 15, 16 and 17.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Useful context for the crews count. It neither confirms nor contradicts the two dates in the claim.",
+            "context_gap": "The article says five more crews followed Apollo 12. The record shows six landings after Apollo 11, so the sentence is loose rather than wrong. The claim itself does not rest on it."
+          }
+        }
+      ],
+      "audit": {
+        "sources_queried": [
+          "science.nasa.gov",
+          "britannica.com",
+          "en.wikipedia.org"
+        ],
+        "results_retrieved": 7,
+        "results_used": 3,
+        "quotes_checked": 3,
+        "quotes_dropped": 0,
+        "claims_dropped": 0,
+        "notes": [
+          "The claim was split into two sub-claims internally because one passage described each half."
+        ]
+      }
+    },
+    {
+      "id": "cl-003",
+      "folio": "03",
+      "text": "The Moon averages 384,400 kilometres from Earth, and light from the Moon takes about 1.3 seconds to arrive.",
+      "type": "Measurement",
+      "article_quote": "The Moon sits roughly 384,400 kilometres from Earth, and the light that leaves it arrives here 1.3 seconds later.",
+      "article_quote_position": "Paragraph 2, sentence 2",
+      "time_sensitive": false,
+      "entities": [
+        "Moon",
+        "Earth"
+      ],
+      "verdict": {
+        "label": "Largely supported",
+        "tone": "support",
+        "one_line": "The distance figure and the light travel time agree across three sources, two of them independent of each other."
+      },
+      "stance_direction": {
+        "lean": "supports",
+        "counts": {
+          "supports": 3,
+          "refutes": 0,
+          "neutral": 0
+        },
+        "summary": "3 supporting, 0 refuting"
+      },
+      "evidence_strength": 0.886,
+      "strength_label": "High",
+      "scores": {
+        "c": {
+          "label": "Source credibility",
+          "value": 0.9,
+          "weight": 0.3,
+          "points": 0.27,
+          "reason": "Agency fact sheet and two reference works.",
+          "inputs": "science.nasa.gov, britannica.com, en.wikipedia.org"
+        },
+        "r": {
+          "label": "Evidence relevance",
+          "value": 0.93,
+          "weight": 0.3,
+          "points": 0.279,
+          "reason": "Every passage gives the number directly.",
+          "inputs": "mean relevance 0.93"
+        },
+        "a": {
+          "label": "Independent agreement",
+          "value": 0.8,
+          "weight": 0.2,
+          "points": 0.16,
+          "reason": "Three domains agree on the same figures.",
+          "inputs": "3 clusters, 3 domains, identical values"
+        },
+        "t": {
+          "label": "Freshness",
+          "value": 0.82,
+          "weight": 0.1,
+          "points": 0.082,
+          "reason": "Recent pages, stable measurement.",
+          "inputs": "newest 2026-03, oldest 2025-02"
+        },
+        "k": {
+          "label": "Contextual consistency",
+          "value": 0.95,
+          "weight": 0.1,
+          "points": 0.095,
+          "reason": "Roughly is present in the sentence and the sources give a mean value, which matches the wording.",
+          "inputs": "0 context gaps flagged"
+        },
+        "s": {
+          "value": 0.886,
+          "formula": "0.30 C + 0.30 R + 0.20 A + 0.10 T + 0.10 K",
+          "result": "0.270 + 0.279 + 0.160 + 0.082 + 0.095 = 0.886"
+        }
+      },
+      "insufficient": {
+        "is": false,
+        "reasons": []
+      },
+      "evidence": [
+        {
+          "cluster_id": 1,
+          "url": "demo://factora/passage/moon-fact-sheet",
+          "domain": "science.nasa.gov",
+          "title": "Moon fact sheet",
+          "text_or_snippet": "The Moon orbits Earth at a mean distance of 384,400 km. Because light travels at about 299,792 km per second, the one-way light time between Earth and the Moon is about 1.3 seconds.",
+          "published_at": "2026-03-02",
+          "source_kind": "Government agency",
+          "relevance": 0.96,
+          "stance": "SUPPORTS",
+          "analysis": {
+            "quote": "Because light travels at about 299,792 km per second, the one-way light time between Earth and the Moon is about 1.3 seconds.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Gives both the distance and the derived travel time, matching the claim.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:12:06Z",
+          "word_count": 188
+        },
+        {
+          "cluster_id": 2,
+          "url": "demo://factora/passage/moon-distance-britannica",
+          "domain": "britannica.com",
+          "title": "Moon, distance and orbit",
+          "text_or_snippet": "The average distance between the centres of Earth and the Moon is 384,400 km, though the orbit is elliptical and the figure varies by about 21,000 km either way.",
+          "published_at": "2025-08-11",
+          "source_kind": "Encyclopedia",
+          "relevance": 0.94,
+          "stance": "SUPPORTS",
+          "analysis": {
+            "quote": "The average distance between the centres of Earth and the Moon is 384,400 km, though the orbit is elliptical and the figure varies by about 21,000 km either way.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Confirms the average while noting the range, which the article's use of roughly allows for.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:12:06Z",
+          "word_count": 203
+        },
+        {
+          "cluster_id": 3,
+          "url": "demo://factora/passage/moon-light-time",
+          "domain": "en.wikipedia.org",
+          "title": "Lunar distance",
+          "text_or_snippet": "Moonlight takes 1.255 to 1.271 seconds to reach Earth, the range arising from the eccentricity of the lunar orbit.",
+          "published_at": "2025-02-27",
+          "source_kind": "Encyclopedia",
+          "relevance": 0.89,
+          "stance": "SUPPORTS",
+          "analysis": {
+            "quote": "Moonlight takes 1.255 to 1.271 seconds to reach Earth, the range arising from the eccentricity of the lunar orbit.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Independent calculation supports the 1.3 second figure used in the article.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:12:07Z",
+          "word_count": 156
+        }
+      ],
+      "audit": {
+        "sources_queried": [
+          "science.nasa.gov",
+          "britannica.com",
+          "en.wikipedia.org"
+        ],
+        "results_retrieved": 6,
+        "results_used": 3,
+        "quotes_checked": 3,
+        "quotes_dropped": 0,
+        "claims_dropped": 0,
+        "notes": [
+          "Two of the retrieved pages cited the same agency fact sheet, so the agreement count treats them as one cluster."
+        ]
+      }
+    },
+    {
+      "id": "cl-004",
+      "folio": "04",
+      "text": "Ground-based telescopes using adaptive optics resolve lunar surface features down to about 100 metres, so individual astronaut footprints cannot be seen from Earth.",
+      "type": "Technical claim",
+      "article_quote": "Ground-based telescopes with adaptive optics resolve surface features down to roughly 100 metres, which means an individual astronaut footprint is far below anything they can see; the footprints are visible in spacecraft images, where they show up as disturbed soil rather than as sharp marks.",
+      "article_quote_position": "Paragraph 2, sentence 3",
+      "time_sensitive": true,
+      "entities": [
+        "adaptive optics",
+        "lunar surface",
+        "Apollo footprints"
+      ],
+      "verdict": {
+        "label": "Contested",
+        "tone": "neutral",
+        "one_line": "The resolution figure is supported. The conclusion drawn from it is stronger than the sources allow, and one source puts the current limit at a few hundred metres."
+      },
+      "stance_direction": {
+        "lean": "unclear",
+        "counts": {
+          "supports": 2,
+          "refutes": 1,
+          "neutral": 2
+        },
+        "summary": "2 supporting, 1 refuting, 2 contextual"
+      },
+      "evidence_strength": 0.638,
+      "strength_label": "Moderate",
+      "scores": {
+        "c": {
+          "label": "Source credibility",
+          "value": 0.84,
+          "weight": 0.3,
+          "points": 0.252,
+          "reason": "Two observatory pages and one agency explainer. One preprint is included and weighted lower.",
+          "inputs": "eso.org, science.nasa.gov, arxiv.org (preprint, discounted)"
+        },
+        "r": {
+          "label": "Evidence relevance",
+          "value": 0.72,
+          "weight": 0.3,
+          "points": 0.216,
+          "reason": "Sources address resolution, not visibility of a specific object. The inference sits in the article, not in the evidence.",
+          "inputs": "mean relevance 0.72, 2 of 5 passages indirect"
+        },
+        "a": {
+          "label": "Independent agreement",
+          "value": 0.45,
+          "weight": 0.2,
+          "points": 0.09,
+          "reason": "Sources agree on the order of magnitude and disagree on the exact figure.",
+          "inputs": "4 clusters, 3 domains, conflicting figures (100 m vs a few hundred m)"
+        },
+        "t": {
+          "label": "Freshness",
+          "value": 0.7,
+          "weight": 0.1,
+          "points": 0.07,
+          "reason": "Instrument performance changes. One source predates the current adaptive-optics generation.",
+          "inputs": "newest 2025-12, oldest 2019-05, claim marked time sensitive"
+        },
+        "k": {
+          "label": "Contextual consistency",
+          "value": 0.1,
+          "weight": 0.1,
+          "points": 0.01,
+          "reason": "The sentence moves from resolution to visibility without support. That step is the weak point of the claim.",
+          "inputs": "1 context gap flagged, inference not sourced"
+        },
+        "s": {
+          "value": 0.638,
+          "formula": "0.30 C + 0.30 R + 0.20 A + 0.10 T + 0.10 K",
+          "result": "0.252 + 0.216 + 0.090 + 0.070 + 0.010 = 0.638"
+        }
+      },
+      "insufficient": {
+        "is": false,
+        "reasons": []
+      },
+      "evidence": [
+        {
+          "cluster_id": 1,
+          "url": "demo://factora/passage/adaptive-optics-eso",
+          "domain": "eso.org",
+          "title": "Adaptive optics on the Very Large Telescope",
+          "text_or_snippet": "Under good conditions the adaptive optics system delivers a resolution of about 0.05 arcseconds in the near infrared. At the mean Earth-Moon distance this corresponds to roughly 90 metres on the lunar surface.",
+          "published_at": "2025-12-03",
+          "source_kind": "Research organisation",
+          "relevance": 0.9,
+          "stance": "SUPPORTS",
+          "analysis": {
+            "quote": "At the mean Earth-Moon distance this corresponds to roughly 90 metres on the lunar surface.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Supports the order of magnitude in the claim. Says nothing about whether a footprint is visible.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:12:07Z",
+          "word_count": 245
+        },
+        {
+          "cluster_id": 2,
+          "url": "demo://factora/passage/lunar-orbiter-camera",
+          "domain": "science.nasa.gov",
+          "title": "Lunar Reconnaissance Orbiter camera",
+          "text_or_snippet": "The narrow angle camera can resolve features as small as half a metre from an orbit of about 50 km, which is what makes the Apollo hardware and disturbed soil visible in the returned images.",
+          "published_at": "2025-09-22",
+          "source_kind": "Government agency",
+          "relevance": 0.83,
+          "stance": "SUPPORTS",
+          "analysis": {
+            "quote": "The narrow angle camera can resolve features as small as half a metre from an orbit of about 50 km, which is what makes the Apollo hardware and disturbed soil visible in the returned images.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Supports the article's second half: spacecraft images are what show the footprints.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:12:07Z",
+          "word_count": 197
+        },
+        {
+          "cluster_id": 3,
+          "url": "demo://factora/passage/ground-based-limits",
+          "domain": "arxiv.org",
+          "title": "Ground-based lunar imaging limits (preprint)",
+          "text_or_snippet": "In practice, atmospheric turbulence leaves ground-based lunar imaging with a working resolution of a few hundred metres per pixel even with adaptive optics corrections applied.",
+          "published_at": "2024-04-19",
+          "source_kind": "Preprint",
+          "relevance": 0.8,
+          "stance": "REFUTES",
+          "analysis": {
+            "quote": "In practice, atmospheric turbulence leaves ground-based lunar imaging with a working resolution of a few hundred metres per pixel even with adaptive optics corrections applied.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Contradicts the specific 100 metre figure. A preprint, so it counts less than a reviewed source.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:12:07Z",
+          "word_count": 311
+        },
+        {
+          "cluster_id": 4,
+          "url": "demo://factora/passage/observatory-faq",
+          "domain": "astro.example.edu",
+          "title": "Can telescopes see the flags on the Moon?",
+          "text_or_snippet": "Even the largest telescopes on Earth cannot resolve objects of a few metres on the lunar surface. The flags and the descent stages are far below the resolution limit from the ground.",
+          "published_at": "2023-03-08",
+          "source_kind": "University outreach",
+          "relevance": 0.86,
+          "stance": "NEUTRAL",
+          "analysis": {
+            "quote": "Even the largest telescopes on Earth cannot resolve objects of a few metres on the lunar surface.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Supports the conclusion about visibility but does not settle the resolution figure.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:12:07Z",
+          "word_count": 88
+        },
+        {
+          "cluster_id": 5,
+          "url": "demo://factora/passage/footprint-visibility-blog",
+          "domain": "lunarimaging.example",
+          "title": "Reading the lunar surface from Earth",
+          "text_or_snippet": "Some observers argue that stacking thousands of frames can push ground-based resolution past the atmospheric limit, though the claim has not been reproduced by an observatory.",
+          "published_at": "2020-11-02",
+          "source_kind": "Blog",
+          "relevance": 0.58,
+          "stance": "NEUTRAL",
+          "analysis": {
+            "quote": "Some observers argue that stacking thousands of frames can push ground-based resolution past the atmospheric limit, though the claim has not been reproduced by an observatory.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Repeats an unreproduced claim. It carries weight in the audit, not in the score.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:12:07Z",
+          "word_count": 143
+        }
+      ],
+      "audit": {
+        "sources_queried": [
+          "eso.org",
+          "science.nasa.gov",
+          "arxiv.org",
+          "astro.example.edu",
+          "lunarimaging.example"
+        ],
+        "results_retrieved": 11,
+        "results_used": 5,
+        "quotes_checked": 6,
+        "quotes_dropped": 1,
+        "claims_dropped": 0,
+        "notes": [
+          "One quote from the preprint failed the substring guard because the retrieved text contained a corrected erratum. It was dropped and counted.",
+          "The blog passage was kept in the evidence list with low relevance and is excluded from the agreement term."
+        ]
+      }
+    },
+    {
+      "id": "cl-005",
+      "folio": "05",
+      "text": "Artemis II will send four astronauts around the Moon without landing.",
+      "type": "Planned event",
+      "article_quote": "The Artemis II crew of four will fly around the Moon without landing, and Artemis III is planned to put astronauts down near the lunar south pole.",
+      "article_quote_position": "Paragraph 3, sentence 2",
+      "time_sensitive": true,
+      "entities": [
+        "Artemis II",
+        "NASA",
+        "lunar south pole"
+      ],
+      "verdict": {
+        "label": "Largely supported",
+        "tone": "support",
+        "one_line": "The agency mission description and two independent write-ups agree on the crew size and the flyby profile."
+      },
+      "stance_direction": {
+        "lean": "supports",
+        "counts": {
+          "supports": 2,
+          "refutes": 0,
+          "neutral": 1
+        },
+        "summary": "2 supporting, 0 refuting, 1 contextual"
+      },
+      "evidence_strength": 0.81,
+      "strength_label": "High",
+      "scores": {
+        "c": {
+          "label": "Source credibility",
+          "value": 0.9,
+          "weight": 0.3,
+          "points": 0.27,
+          "reason": "Mission page and a space agency partner. One trade outlet adds context.",
+          "inputs": "nasa.gov, esa.int, space.com"
+        },
+        "r": {
+          "label": "Evidence relevance",
+          "value": 0.88,
+          "weight": 0.3,
+          "points": 0.264,
+          "reason": "All three passages describe the mission profile directly.",
+          "inputs": "mean relevance 0.88"
+        },
+        "a": {
+          "label": "Independent agreement",
+          "value": 0.58,
+          "weight": 0.2,
+          "points": 0.116,
+          "reason": "ESA is a partner on the mission, so the two agency passages are not fully independent.",
+          "inputs": "3 clusters, 2 independent domains, 1 partner agency"
+        },
+        "t": {
+          "label": "Freshness",
+          "value": 0.76,
+          "weight": 0.1,
+          "points": 0.076,
+          "reason": "Schedules move. The newest mission page is under two months old.",
+          "inputs": "newest 2026-09, oldest 2026-02, time sensitive"
+        },
+        "k": {
+          "label": "Contextual consistency",
+          "value": 0.84,
+          "weight": 0.1,
+          "points": 0.084,
+          "reason": "The claim is separated correctly from the following sentence about Artemis III.",
+          "inputs": "0 context gaps flagged"
+        },
+        "s": {
+          "value": 0.81,
+          "formula": "0.30 C + 0.30 R + 0.20 A + 0.10 T + 0.10 K",
+          "result": "0.270 + 0.264 + 0.116 + 0.076 + 0.084 = 0.810"
+        }
+      },
+      "insufficient": {
+        "is": false,
+        "reasons": []
+      },
+      "evidence": [
+        {
+          "cluster_id": 1,
+          "url": "demo://factora/passage/artemis-2",
+          "domain": "nasa.gov",
+          "title": "Artemis II mission page",
+          "text_or_snippet": "Artemis II will carry four astronauts on a roughly ten-day mission around the Moon and back. The crew will not land; the flight tests the life support and heat shield systems before a landing attempt.",
+          "published_at": "2026-09-30",
+          "source_kind": "Government agency",
+          "relevance": 0.94,
+          "stance": "SUPPORTS",
+          "analysis": {
+            "quote": "Artemis II will carry four astronauts on a roughly ten-day mission around the Moon and back. The crew will not land",
+            "quote_verified": true,
+            "quote_mode": "insertions",
+            "quote_insertions": 2,
+            "rationale": "Crew size and the no-landing profile match. Two sentences were joined by the model; the guard reports the insertions rather than hiding them.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:12:06Z",
+          "word_count": 286
+        },
+        {
+          "cluster_id": 2,
+          "url": "demo://factora/passage/artemis-esa",
+          "domain": "esa.int",
+          "title": "Europe's part in Artemis II",
+          "text_or_snippet": "The European Service Module will power the Orion spacecraft that carries the four-person crew around the Moon. ESA provides the module; NASA operates the flight.",
+          "published_at": "2026-05-16",
+          "source_kind": "Partner agency",
+          "relevance": 0.85,
+          "stance": "SUPPORTS",
+          "analysis": {
+            "quote": "The European Service Module will power the Orion spacecraft that carries the four-person crew around the Moon.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Confirms four crew and the lunar flyby. Partner agency, so agreement is counted at half weight.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:12:06Z",
+          "word_count": 174
+        },
+        {
+          "cluster_id": 3,
+          "url": "demo://factora/passage/artemis-schedule",
+          "domain": "space.com",
+          "title": "What each Artemis flight is meant to prove",
+          "text_or_snippet": "Artemis II repeats the Apollo 8 profile with a modern crew: a free return trajectory, no landing, and a splashdown in the Pacific. Astronauts have described the trajectory as the steepest re-entry flown from lunar distance.",
+          "published_at": "2026-02-11",
+          "source_kind": "Trade news",
+          "relevance": 0.8,
+          "stance": "NEUTRAL",
+          "analysis": {
+            "quote": "Artemis II repeats the Apollo 8 profile with a modern crew: a free return trajectory, no landing, and a splashdown in the Pacific.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Describes the profile without adding verification of the crew size.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:12:07Z",
+          "word_count": 221
+        }
+      ],
+      "audit": {
+        "sources_queried": [
+          "nasa.gov",
+          "esa.int",
+          "space.com"
+        ],
+        "results_retrieved": 8,
+        "results_used": 3,
+        "quotes_checked": 3,
+        "quotes_dropped": 0,
+        "claims_dropped": 0,
+        "notes": [
+          "The NASA quote was rebuilt by the stance model from two adjacent sentences. The substring guard reports this as 2 insertions and the quote is shown with that mark."
+        ]
+      }
+    },
+    {
+      "id": "cl-006",
+      "folio": "06",
+      "text": "Artemis III is expected to make the first crewed landing in 2028.",
+      "type": "Dated plan",
+      "article_quote": "Artemis III is planned to put astronauts down near the lunar south pole, with the first crewed landing expected in 2028.",
+      "article_quote_position": "Paragraph 3, sentence 2",
+      "time_sensitive": true,
+      "entities": [
+        "Artemis III",
+        "2028",
+        "SpaceX Starship",
+        "Gateway"
+      ],
+      "verdict": {
+        "label": "Insufficient evidence",
+        "tone": "quiet",
+        "one_line": "The sources disagree on which year is current and two of them are older than the last schedule revision. No strength score is issued as a result."
+      },
+      "stance_direction": {
+        "lean": "unclear",
+        "counts": {
+          "supports": 1,
+          "refutes": 1,
+          "neutral": 1
+        },
+        "summary": "1 supporting, 1 refuting, 1 contextual"
+      },
+      "evidence_strength": 0.585,
+      "strength_label": "Low",
+      "scores": {
+        "c": {
+          "label": "Source credibility",
+          "value": 0.86,
+          "weight": 0.3,
+          "points": 0.258,
+          "reason": "Agency page plus two trade write-ups.",
+          "inputs": "nasa.gov, spacenews.com, space.com"
+        },
+        "r": {
+          "label": "Evidence relevance",
+          "value": 0.7,
+          "weight": 0.3,
+          "points": 0.21,
+          "reason": "Only one passage names 2028 directly. The others discuss schedule risk without a year.",
+          "inputs": "mean relevance 0.70, 1 of 3 passages on the date"
+        },
+        "a": {
+          "label": "Independent agreement",
+          "value": 0.2,
+          "weight": 0.2,
+          "points": 0.04,
+          "reason": "One supporting and one refuting passage. Agreement collapses, which is the intended behaviour.",
+          "inputs": "3 clusters, 3 domains, 1 support and 1 refute"
+        },
+        "t": {
+          "label": "Freshness",
+          "value": 0.35,
+          "weight": 0.1,
+          "points": 0.035,
+          "reason": "Two passages predate the most recent schedule change.",
+          "inputs": "newest 2026-08, oldest 2024-12, dated plan"
+        },
+        "k": {
+          "label": "Contextual consistency",
+          "value": 0.42,
+          "weight": 0.1,
+          "points": 0.042,
+          "reason": "The article turns a target into an expectation, which the sources do not do.",
+          "inputs": "1 context gap flagged"
+        },
+        "s": {
+          "value": 0.585,
+          "formula": "0.30 C + 0.30 R + 0.20 A + 0.10 T + 0.10 K",
+          "result": "0.258 + 0.210 + 0.040 + 0.035 + 0.042 = 0.585"
+        }
+      },
+      "insufficient": {
+        "is": true,
+        "reasons": [
+          "Sources disagree on the current target year, and the newest is older than the last schedule revision.",
+          "One passage names 2028; another treats 2028 as superseded without giving a replacement year.",
+          "The agreement term is too low for a verdict. A score of 0.585 is printed for transparency but is not used as a verdict."
+        ]
+      },
+      "evidence": [
+        {
+          "cluster_id": 1,
+          "url": "demo://factora/passage/artemis-3-target",
+          "domain": "nasa.gov",
+          "title": "Artemis III and the lunar south pole",
+          "text_or_snippet": "The agency is targeting 2028 for the first crewed landing of the Artemis campaign, with a landing region near the lunar south pole selected for its permanently shadowed terrain.",
+          "published_at": "2026-08-19",
+          "source_kind": "Government agency",
+          "relevance": 0.82,
+          "stance": "SUPPORTS",
+          "analysis": {
+            "quote": "The agency is targeting 2028 for the first crewed landing of the Artemis campaign",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Names 2028 as a target. A target is not a commitment, which the rationale records.",
+            "context_gap": "The source calls this a target. The article presents it as an expectation, which is a slightly stronger statement."
+          },
+          "fetched_at": "2026-10-31T09:12:08Z",
+          "word_count": 208
+        },
+        {
+          "cluster_id": 2,
+          "url": "demo://factora/passage/artemis-landing-system",
+          "domain": "spacenews.com",
+          "title": "Landing system tests slip again",
+          "text_or_snippet": "Engineers now say the crewed landing will not happen in 2028, citing uncompleted propellant transfer tests. No replacement year has been announced.",
+          "published_at": "2026-10-02",
+          "source_kind": "Trade news",
+          "relevance": 0.84,
+          "stance": "REFUTES",
+          "analysis": {
+            "quote": "Engineers now say the crewed landing will not happen in 2028, citing uncompleted propellant transfer tests.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Directly contradicts the year in the claim, and is the newest source retrieved.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:12:08Z",
+          "word_count": 187
+        },
+        {
+          "cluster_id": 3,
+          "url": "demo://factora/passage/gateway-schedule",
+          "domain": "space.com",
+          "title": "Gateway is not on the critical path, agency says",
+          "text_or_snippet": "Officials describe the Gateway station as complementary to the landing rather than a prerequisite. The landing depends on the human landing system, not on the station's assembly sequence.",
+          "published_at": "2024-12-04",
+          "source_kind": "Trade news",
+          "relevance": 0.63,
+          "stance": "NEUTRAL",
+          "analysis": {
+            "quote": "The landing depends on the human landing system, not on the station's assembly sequence.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Relevant to schedule risk, not to the year in the claim.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:12:08Z",
+          "word_count": 165
+        }
+      ],
+      "audit": {
+        "sources_queried": [
+          "nasa.gov",
+          "spacenews.com",
+          "space.com",
+          "google_fact_check"
+        ],
+        "results_retrieved": 5,
+        "results_used": 3,
+        "quotes_checked": 4,
+        "quotes_dropped": 1,
+        "claims_dropped": 0,
+        "notes": [
+          "The fact-check adapter timed out after 8 s and returned no results. It is listed as a failed source, not as a source with no findings.",
+          "Two retrieved pages quoted the same 2024 agency release, so only one of them counts toward agreement."
+        ]
+      }
+    }
+  ],
+  "limitations": [
+    "The corpus is small. A claim with no matching passage is reported as thin evidence, not as false.",
+    "Retrieval covers general web sources and two reference works. Specialist literature and paywalled archives are outside this run.",
+    "One adapter failed during this run. Its absence lowers coverage for the final claim and is counted as a failure, not as an empty result.",
+    "The score is a weighted sum, not a probability. Weights were fixed before the run and are shown in full."
+  ],
+  "failed_sources": [
+    {
+      "name": "Google Fact Check Tools",
+      "status": "timeout",
+      "detail": "No response within 8000 ms. Skipped after two attempts.",
+      "attempts": 2
+    }
+  ]
+}
