@@ -924,19 +924,36 @@ def test_parallel_claims_preserve_order_and_cut_wall_clock():
                   f"{query} explained in detail", "web")
             ]
 
-    engine = make_engine([PerCallAdapter()])
+    # fetch_full_text=0 for the same reason test_slow_source_is_abandoned_at_the_deadline
+    # sets it: the stub hands out fake `echo.example` URLs, and the engine's page-text
+    # stage would spend its DNS lookup plus the 4 s full-text tail on every item. That
+    # tail is per-call, so it lands on the parallel and the serial measurement alike and
+    # the ratio below would be comparing two numbers that are mostly network timeout.
+    engine = make_engine([PerCallAdapter()], fetch_full_text=0)
     claims = [{"id": f"c{i}", "text": f"unique claim number {i}"} for i in range(4)]
 
     # warm up thread pools so startup cost is not measured
     retrieve_for_claims(claims[:1], engine=engine, parallel_claims=1)
 
-    started = _t.perf_counter()
-    bundles = retrieve_for_claims(claims, engine=engine, parallel_claims=4)
-    parallel_elapsed = _t.perf_counter() - started
+    def timed(count: int, workers: int, tag: str) -> float:
+        """Best of `count` runs. The minimum is the point: on a busy machine a single
+        measurement is dominated by whatever else is running, and a ratio built from two
+        such measurements is noise. Each run uses fresh claim text, or the engine cache
+        would answer it and measure nothing."""
+        best = float("inf")
+        for attempt in range(count):
+            batch = [
+                {"id": f"c{i}-{tag}{attempt}", "text": f"unique claim number {i} {tag}{attempt}"}
+                for i in range(4)
+            ]
+            started = _t.perf_counter()
+            retrieve_for_claims(batch, engine=engine, parallel_claims=workers)
+            best = min(best, _t.perf_counter() - started)
+        return best
 
-    started = _t.perf_counter()
-    retrieve_for_claims(claims, engine=engine, parallel_claims=1)
-    serial_elapsed = _t.perf_counter() - started
+    bundles = retrieve_for_claims(claims, engine=engine, parallel_claims=4)
+    parallel_elapsed = timed(3, 4, "p")
+    serial_elapsed = timed(2, 1, "s")
 
     assert [b["claim"]["id"] for b in bundles] == ["c0", "c1", "c2", "c3"]
     assert serial_elapsed > 0.1, "serial baseline too fast to compare against"

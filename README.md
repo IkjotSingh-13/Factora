@@ -34,7 +34,9 @@ Then serve it:
 python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
 ```
 
-and open **`http://localhost:8000/`**. `/docs` is Swagger, `/health` is liveness,
+and open **`http://localhost:8000/`**. If node is on the machine, `make build-ui` (or
+`./scripts/bootstrap.sh --ui`) also builds the React UI in `frontend-app/`, which is then what
+`/` serves; without it you get the same product in the zero-build file. `/docs` is Swagger, `/health` is liveness,
 `/api/config` prints what this process will actually do — start there when behaviour and a
 document disagree. `make help` lists every other task (`make run`, `make test`, `make checks`,
 `make connections`, `make qa`). If you would rather install by hand, `pip install -r
@@ -43,9 +45,21 @@ requirements.txt` is enough to run everything except S1's named-entity pass.
 `docs/SETUP.md` is the full path from a clean machine, including the optional parts: live
 sources with no keys at all, Google Fact Check / Tavily keys, and a local model through Ollama.
 
-The UI is one self-contained file (`frontend/index.html`): no build step, no npm, no CDN, no
-external request — it is served by `StaticFiles` and talks only to relative `/api/*` paths, so
-it works offline and on any machine that has the repo.
+### The UI
+
+Two frontends ship, and they read the same API:
+
+| | what it is | served at |
+| --- | --- | --- |
+| `frontend-app/` | the product UI: React 18 + TypeScript + Tailwind, built by Vite (`make build-ui`) | `/` once `frontend-app/dist` exists |
+| `frontend/index.html` | the same product in one self-contained file: no build step, no npm, no CDN, no external request | `/lite`, and `/` when the React build is absent |
+
+`frontend-app/` is Taranpreet's design from the `frontend` branch, wired to this pipeline instead
+of the scripted demo the branch shipped with. Its components call `POST /api/verify` and read
+nothing else; `src/lib/verifyEngine.ts` — which invented quotes, source URLs and scores in the
+browser — is deleted, and `tests/test_ui_serving.py` fails if it comes back. Both UIs work
+offline, both label a non-live run as non-live, and `GET /api/config` says which one you are
+looking at. See `frontend-app/README.md` for the rules that file must keep honouring.
 
 No API keys are needed to run everything except live retrieval: S1 falls back to its
 deterministic extractor and S3 to its lexical analyser, and both fallbacks are *named* in the
@@ -53,14 +67,23 @@ response warnings.
 
 | | |
 | --- | --- |
-| ![idle](docs/screens/01-idle.png) | ![results](docs/screens/02-results.png) |
-| Empty state: what the pipeline will do, before it does it. | A claim card: verdict, verbatim quote, stance vs strength, the arithmetic, then the evidence. |
+| ![landing](docs/screens/00-hero.png) | ![input](docs/screens/01-idle.png) |
+| The landing page. Its sample cards are labelled as demo fixtures, not results. | The verify panel: article or URL, and the evidence mode the run will use. |
 
-![one claim card](docs/screens/03-evidence.png)
+| | |
+| --- | --- |
+| ![report](docs/screens/02-results.png) | ![audit](docs/screens/04-audit.png) |
+| A live run: verdict per claim, verbatim article quote, stance next to strength, the S arithmetic. | The audit trail: which adapters answered, how many quotes the guard dropped, per-claim match counts. |
+
+| | |
+| --- | --- |
+| ![evidence modal](docs/screens/03-evidence.png) | ![offline label](docs/screens/05-offline-label.png) |
+| One evidence card opened: the quote that matched, what it matched against, and the source link. | The same article in `offline` mode: the banner says the corpus is local before any number is read. |
 
 Where evidence came from a snippet instead of a fetched page, the card says so — snippet-scope
 verification is labelled as the weaker thing it is, and is never shown as a bare "verified".
-Screenshots were captured from a fresh `bootstrap.sh` install, not from a fixture.
+Screenshots were captured from this checkout against a running `uvicorn`, live mode for the
+report and audit shots, `offline` for the labelled one — not from a fixture.
 
 ## API
 
@@ -106,16 +129,17 @@ deck.
 
 ```bash
 make checks                 # everything below, in order, or run them one at a time:
-python -m pytest -q                                            # 416 tests
+python -m pytest -q                                            # 423 tests
 python scripts/doctor.py                                       # env + wiring report
 python scripts/check_connections.py                            # ollama / keys / sources / API
 python scripts/check_s3_contract.py --analyze s3_analysis:analyze \
     --replay data/demo_snapshot.json                           # S3 ↔ S2 seam gate
 python scripts/run_test_set.py                                 # labelled QA set, measured
-node scripts/ui_render_check.mjs                               # UI renders every state
+node scripts/ui_render_check.mjs                               # both UIs render every state
 ```
 
-(Node is only needed for that last one; nothing in the shipped app requires it.)
+(Node is only needed for that last check and for `make build-ui`; nothing in the shipped app
+requires either — `/` falls back to the zero-build file.)
 
 The last two are not optional extras: the seam checker is what tells S3 authors whether their
 analyzer is compatible with the evidence bundle shape, and `run_test_set.py` writes
@@ -123,12 +147,13 @@ analyzer is compatible with the evidence bundle shape, and `run_test_set.py` wri
 re-runs the set and fails if the committed results no longer match, so no documented number can
 drift from the code.
 
-Latest measured state on this checkout: **416 tests pass**; seam gate reports "S3 is compatible
+Latest measured state on this checkout: **423 tests pass**; seam gate reports "S3 is compatible
 with the S2 seam" with 10/10 evidence items analysed and 0 fabricated quotes; QA set offline
 **9/9 directions met, 0 invariant violations, 1 case unmeasured**, on captured real sources
-(snapshot) 5/9; `node scripts/ui_render_check.mjs` and a headless-browser pass over the UI both
-clean (no console errors, no horizontal overflow at 1440 or 390 px, no WCAG contrast failure in
-the palette). The QA set measures 8 cases on a machine that has `en_core_web_sm` installed and 9
+(snapshot) 5/9; `node scripts/ui_render_check.mjs` covers both frontends, and a
+headless-browser pass over the React UI is clean (0 console errors, 0 external requests, 0
+horizontal overflow at 1440 or 390 px, evidence cards carry a real source link, a live run
+prints no not-live banner and an offline run prints exactly one). The QA set measures 8 cases on a machine that has `en_core_web_sm` installed and 9
 on one that does not, because the real model declines to turn an opinion sentence into a claim —
 both are the correct outcome and `data/test_set_results.json` records the reason. Neither number
 is an accuracy figure — see `docs/TEST_SET.md` for what they do and do not mean.
@@ -156,7 +181,9 @@ s2:   s2_retrieval.py, s2_service.py, sources.py, ranking.py, cache.py, fulltext
 s3:   s3_analysis.py, scripts/check_s3_contract.py
 s4/5: backend/app/pipeline/s4_scoring.py, s5_report.py
 glue: backend/app/pipeline/{article_quotes,verify,orchestrator}.py, contract_adapter.py
-ui:   frontend/index.html (one file), scripts/ui_render_check.mjs
+ui:   frontend-app/ (React app, served at /), frontend/index.html (one file, /lite),
+      frontend-app/src/lib/api.ts (the only place the UI talks to the pipeline),
+      scripts/ui_render_check.mjs
 qa:   data/test_set.json, scripts/run_test_set.py, docs/TEST_SET.md
 setup: scripts/bootstrap.{sh,ps1}, scripts/check_connections.py, scripts/doctor.py, Makefile
 docs: docs/{SETUP,ARCHITECTURE,SCORING,DEMO,TEST_SET,PROGRESS,CONTRACT,INTEGRATION,WINDOWS}.md

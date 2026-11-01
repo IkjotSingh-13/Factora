@@ -1,0 +1,661 @@
+{
+  "schema_version": "1.0",
+  "mode": "mock",
+  "demo_label": "Cached demo result",
+  "fixture_note": "Mock mode. Second cached fixture, built to show strong evidence that points the other way. Links are demo:// and do not resolve.",
+  "run": {
+    "run_id": "FA-1031-5502",
+    "mode": "mock",
+    "engine": "cached demo fixture (no live calls)",
+    "started_at": "2026-10-31T09:24:11Z",
+    "finished_at": "2026-10-31T09:24:15Z",
+    "duration_ms": 3960,
+    "adapters": [
+      {
+        "name": "pubmed.ncbi.nlm.nih.gov",
+        "kind": "Peer reviewed index",
+        "status": "ok",
+        "results": 7
+      },
+      {
+        "name": "journals.example.org",
+        "kind": "Journal",
+        "status": "ok",
+        "results": 4
+      },
+      {
+        "name": "health.example.edu",
+        "kind": "University health service",
+        "status": "ok",
+        "results": 3
+      },
+      {
+        "name": "sportsinstitute.example",
+        "kind": "Sports institute",
+        "status": "ok",
+        "results": 2
+      },
+      {
+        "name": "archive.example.org",
+        "kind": "Archive search",
+        "status": "error",
+        "results": 0
+      }
+    ]
+  },
+  "article": {
+    "title": "The cold plunge numbers nobody checks",
+    "origin": "Pasted text",
+    "source_url": null,
+    "words": 194,
+    "submitted_at": "2026-10-31T09:24:11Z",
+    "excerpt": "A cold plunge promises the metabolic effect of a long run in fifteen minutes."
+  },
+  "disclaimer": "Evidence strength describes how much independent, credible, relevant material was found. It is not the probability that a claim is true. Direction of evidence is reported separately.",
+  "summary": {
+    "claims_total": 3,
+    "claims_checked": 3,
+    "status_counts": {
+      "supported": 1,
+      "contested": 0,
+      "insufficient": 1,
+      "refuted": 1
+    },
+    "evidence_items": 8,
+    "evidence_clusters": 6,
+    "sources_used": 3,
+    "sources_failed": 1,
+    "quotes_dropped": 1,
+    "stance_counts": {
+      "supports": 2,
+      "refutes": 4,
+      "neutral": 2
+    }
+  },
+  "method": {
+    "stages": [
+      {
+        "id": "S1",
+        "name": "Claim extraction",
+        "engine": "instruction-tuned 8B model, temperature 0",
+        "detail": "6 candidates passed the checkability filter. 2 were predictions, 1 failed the article-quote guard. 3 claims kept."
+      },
+      {
+        "id": "S2",
+        "name": "Retrieval",
+        "engine": "BM25 + embedding similarity, RRF",
+        "detail": "4 adapters queried, 1 returned an error, 9 passages normalised, duplicates capped at 2 per domain."
+      },
+      {
+        "id": "S3",
+        "name": "Stance analysis",
+        "engine": "NLI model with structured output",
+        "detail": "1 quote failed the substring guard and was dropped. Stances were assigned to the remaining 8."
+      },
+      {
+        "id": "S4",
+        "name": "Scoring",
+        "engine": "deterministic, weights frozen before the run",
+        "detail": "Direction of evidence is kept out of the strength score."
+      },
+      {
+        "id": "S5",
+        "name": "Report and audit",
+        "engine": "schema-validated JSON",
+        "detail": "One claim issued no verdict because the evidence was too thin."
+      }
+    ],
+    "omitted": [
+      {
+        "name": "Cross-encoder reranking",
+        "reason": "Cut to keep the demo stable inside 24 hours."
+      },
+      {
+        "name": "Vector database",
+        "reason": "The session corpus fits in memory."
+      },
+      {
+        "name": "Confidence intervals",
+        "reason": "Cut. The score is a weighted sum with printed components."
+      },
+      {
+        "name": "Full-text fetch for every result",
+        "reason": "Only the top passages were fetched. The rest stayed as snippets."
+      }
+    ],
+    "engines": {
+      "extraction": "instruction-tuned 8B, temperature 0",
+      "stance": "NLI model, structured output",
+      "ranking": "BM25 + dense embedding + RRF"
+    }
+  },
+  "default_claim_id": "cl-101",
+  "claims": [
+    {
+      "id": "cl-101",
+      "folio": "01",
+      "text": "A fifteen-minute cold plunge burns about 500 calories, roughly the same as a 45-minute run.",
+      "type": "Quantitative health claim",
+      "article_quote": "Fifteen minutes in a 10 degree plunge, according to the coaches, burns about 500 calories, which is roughly what a 45 minute run gets you.",
+      "article_quote_position": "Paragraph 1, sentence 2",
+      "time_sensitive": false,
+      "entities": [
+        "cold water immersion",
+        "thermogenesis",
+        "calorie expenditure"
+      ],
+      "verdict": {
+        "label": "Largely refuted",
+        "tone": "refute",
+        "one_line": "Four passages from reviewed literature put the increase in energy expenditure far below the figure in the article. The support comes from a single commercial blog."
+      },
+      "stance_direction": {
+        "lean": "refutes",
+        "counts": {
+          "supports": 1,
+          "refutes": 3,
+          "neutral": 1
+        },
+        "summary": "1 supporting, 3 refuting, 1 contextual"
+      },
+      "evidence_strength": 0.79,
+      "strength_label": "Moderate to high",
+      "scores": {
+        "c": {
+          "label": "Source credibility",
+          "value": 0.9,
+          "weight": 0.3,
+          "points": 0.27,
+          "reason": "Two peer-reviewed reviews, one university health service, one sports institute. The supporting blog is discounted.",
+          "inputs": "pubmed.ncbi.nlm.nih.gov (review), journals.example.org (review), health.example.edu (university), sportsinstitute.example (institute), plungeblog.example (blog, discounted)"
+        },
+        "r": {
+          "label": "Evidence relevance",
+          "value": 0.88,
+          "weight": 0.3,
+          "points": 0.264,
+          "reason": "Four passages state measured energy expenditure for cold exposure directly.",
+          "inputs": "mean relevance 0.88 across 5 passages"
+        },
+        "a": {
+          "label": "Independent agreement",
+          "value": 0.72,
+          "weight": 0.2,
+          "points": 0.144,
+          "reason": "Three independent publishers agree on the order of magnitude. One commercial source disagrees and is outnumbered.",
+          "inputs": "4 clusters, 4 domains, 3 agree, 1 conflicts"
+        },
+        "t": {
+          "label": "Freshness",
+          "value": 0.74,
+          "weight": 0.1,
+          "points": 0.074,
+          "reason": "The two reviews are from 2023 and 2025. No newer measurement was retrieved.",
+          "inputs": "newest 2025-10, oldest 2022-06"
+        },
+        "k": {
+          "label": "Contextual consistency",
+          "value": 0.38,
+          "weight": 0.1,
+          "points": 0.038,
+          "reason": "The article attributes the number to coaches, and the only source repeating it is a page selling a course.",
+          "inputs": "1 context gap flagged, circular sourcing"
+        },
+        "s": {
+          "value": 0.79,
+          "formula": "0.30 C + 0.30 R + 0.20 A + 0.10 T + 0.10 K",
+          "result": "0.270 + 0.264 + 0.144 + 0.074 + 0.038 = 0.790"
+        }
+      },
+      "insufficient": {
+        "is": false,
+        "reasons": []
+      },
+      "evidence": [
+        {
+          "cluster_id": 1,
+          "url": "demo://factora/passage/cold-water-review",
+          "domain": "pubmed.ncbi.nlm.nih.gov",
+          "title": "Energy cost of cold water immersion: systematic review",
+          "text_or_snippet": "Across the included studies, cold water immersion increased energy expenditure by 30 to 90 percent above resting metabolic rate during immersion, with the effect falling to baseline within about an hour after exit.",
+          "published_at": "2025-10-09",
+          "source_kind": "Peer-reviewed review",
+          "relevance": 0.95,
+          "stance": "REFUTES",
+          "analysis": {
+            "quote": "cold water immersion increased energy expenditure by 30 to 90 percent above resting metabolic rate during immersion",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "At rest a person uses roughly 60 to 90 calories an hour. A 90 percent increase for fifteen minutes is a small absolute number, far from 500.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:24:13Z",
+          "word_count": 402
+        },
+        {
+          "cluster_id": 2,
+          "url": "demo://factora/passage/thermogenesis-review",
+          "domain": "journals.example.org",
+          "title": "Thermogenesis during cold exposure in adults",
+          "text_or_snippet": "Measured increases in energy expenditure during short cold exposure are modest. The authors estimate an additional 50 to 150 calories for a session lasting under twenty minutes, including shivering thermogenesis.",
+          "published_at": "2023-04-27",
+          "source_kind": "Peer-reviewed review",
+          "relevance": 0.93,
+          "stance": "REFUTES",
+          "analysis": {
+            "quote": "The authors estimate an additional 50 to 150 calories for a session lasting under twenty minutes, including shivering thermogenesis.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Upper estimate is under a third of the figure in the claim.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:24:13Z",
+          "word_count": 356
+        },
+        {
+          "cluster_id": 3,
+          "url": "demo://factora/passage/plunge-course",
+          "domain": "plungeblog.example",
+          "title": "Why the first minute is everything",
+          "text_or_snippet": "Our method has been measured at up to 500 calories in a single fifteen minute session. Sign up for the winter protocol to see the numbers for yourself.",
+          "published_at": "2026-02-02",
+          "source_kind": "Commercial blog",
+          "relevance": 0.62,
+          "stance": "SUPPORTS",
+          "analysis": {
+            "quote": "Our method has been measured at up to 500 calories in a single fifteen minute session.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Repeats the figure but the page sells a paid course and gives no measurement method.",
+            "context_gap": "The only source carrying the 500 calorie figure has a commercial interest in it. The article cites unnamed coaches with the same wording."
+          },
+          "fetched_at": "2026-10-31T09:24:13Z",
+          "word_count": 119
+        },
+        {
+          "cluster_id": 4,
+          "url": "demo://factora/passage/uni-health-cold",
+          "domain": "health.example.edu",
+          "title": "Cold exposure: what the evidence covers",
+          "text_or_snippet": "Short cold exposure has been studied for mood, recovery and sleep. Calorie burn during immersion is real but small in absolute terms and should not be treated as a substitute for exercise.",
+          "published_at": "2024-11-15",
+          "source_kind": "University health service",
+          "relevance": 0.86,
+          "stance": "REFUTES",
+          "analysis": {
+            "quote": "Calorie burn during immersion is real but small in absolute terms and should not be treated as a substitute for exercise.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Rules out the comparison to a 45 minute run without giving a number.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:24:13Z",
+          "word_count": 244
+        },
+        {
+          "cluster_id": 5,
+          "url": "demo://factora/passage/run-energy-cost",
+          "domain": "sportsinstitute.example",
+          "title": "Energy cost of running",
+          "text_or_snippet": "A 70 kg runner burns roughly 65 to 75 calories per kilometre. Forty-five minutes at a moderate pace therefore sits in the 500 to 650 calorie range.",
+          "published_at": "2022-06-30",
+          "source_kind": "Sports institute",
+          "relevance": 0.78,
+          "stance": "NEUTRAL",
+          "analysis": {
+            "quote": "A 70 kg runner burns roughly 65 to 75 calories per kilometre.",
+            "quote_verified": true,
+            "quote_mode": "insertions",
+            "quote_insertions": 1,
+            "rationale": "Anchors the comparison used in the article. It does not address the cold plunge figure.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:24:14Z",
+          "word_count": 131
+        }
+      ],
+      "audit": {
+        "sources_queried": [
+          "pubmed.ncbi.nlm.nih.gov",
+          "journals.example.org",
+          "health.example.edu",
+          "sportsinstitute.example",
+          "plungeblog.example"
+        ],
+        "results_retrieved": 9,
+        "results_used": 5,
+        "quotes_checked": 5,
+        "quotes_dropped": 0,
+        "claims_dropped": 0,
+        "notes": [
+          "The supporting blog was kept in the evidence list and discounted in the credibility term. Hiding it would have made the refutation look cleaner than the record."
+        ]
+      }
+    },
+    {
+      "id": "cl-102",
+      "folio": "02",
+      "text": "Cold water immersion reduces delayed onset muscle soreness in the 24 to 48 hours after strenuous exercise.",
+      "type": "Health effect",
+      "article_quote": "The soreness data is more solid: immersion in the day after hard training reliably takes the edge off the ache.",
+      "article_quote_position": "Paragraph 2, sentence 1",
+      "time_sensitive": false,
+      "entities": [
+        "DOMS",
+        "cold water immersion",
+        "recovery"
+      ],
+      "verdict": {
+        "label": "Supported with caveats",
+        "tone": "support",
+        "one_line": "Two reviews report a small reduction in soreness. Both note that the effect is modest and short lived, which the article does not say."
+      },
+      "stance_direction": {
+        "lean": "supports",
+        "counts": {
+          "supports": 1,
+          "refutes": 1,
+          "neutral": 1
+        },
+        "summary": "1 supporting, 1 qualifying, 1 contextual"
+      },
+      "evidence_strength": 0.78,
+      "strength_label": "Moderate to high",
+      "scores": {
+        "c": {
+          "label": "Source credibility",
+          "value": 0.92,
+          "weight": 0.3,
+          "points": 0.276,
+          "reason": "Two peer-reviewed sources and one review.",
+          "inputs": "pubmed.ncbi.nlm.nih.gov, journals.example.org, sportsinstitute.example"
+        },
+        "r": {
+          "label": "Evidence relevance",
+          "value": 0.86,
+          "weight": 0.3,
+          "points": 0.258,
+          "reason": "Passages address soreness after exercise directly.",
+          "inputs": "mean relevance 0.86"
+        },
+        "a": {
+          "label": "Independent agreement",
+          "value": 0.6,
+          "weight": 0.2,
+          "points": 0.12,
+          "reason": "Two independent sources agree on a small effect. One of them sets the effect at a magnitude the article overstates.",
+          "inputs": "3 clusters, 3 domains, agreement on direction only"
+        },
+        "t": {
+          "label": "Freshness",
+          "value": 0.78,
+          "weight": 0.1,
+          "points": 0.078,
+          "reason": "Reviews from 2023 and 2025.",
+          "inputs": "newest 2025-06, oldest 2023-01"
+        },
+        "k": {
+          "label": "Contextual consistency",
+          "value": 0.48,
+          "weight": 0.1,
+          "points": 0.048,
+          "reason": "Reliably is stronger than the evidence allows. Sources describe an average reduction of about one point on a ten point scale.",
+          "inputs": "1 context gap flagged"
+        },
+        "s": {
+          "value": 0.78,
+          "formula": "0.30 C + 0.30 R + 0.20 A + 0.10 T + 0.10 K",
+          "result": "0.276 + 0.258 + 0.120 + 0.078 + 0.048 = 0.780"
+        }
+      },
+      "insufficient": {
+        "is": false,
+        "reasons": []
+      },
+      "evidence": [
+        {
+          "cluster_id": 1,
+          "url": "demo://factora/passage/doms-meta",
+          "domain": "pubmed.ncbi.nlm.nih.gov",
+          "title": "Cold water immersion and muscle soreness: meta-analysis",
+          "text_or_snippet": "Pooled results show a reduction in soreness of about one point on a ten point scale at 24 and 48 hours, with high heterogeneity between studies and no clear effect on strength recovery.",
+          "published_at": "2025-06-12",
+          "source_kind": "Peer-reviewed review",
+          "relevance": 0.94,
+          "stance": "SUPPORTS",
+          "analysis": {
+            "quote": "Pooled results show a reduction in soreness of about one point on a ten point scale at 24 and 48 hours",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Supports the direction and the time window. Sets a much smaller size than reliably implies.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:24:14Z",
+          "word_count": 331
+        },
+        {
+          "cluster_id": 2,
+          "url": "demo://factora/passage/recovery-review",
+          "domain": "journals.example.org",
+          "title": "Recovery methods after resistance training",
+          "text_or_snippet": "Immersion was associated with a modest soreness reduction in most trials, though several reported no difference and the evidence for performance outcomes is weak.",
+          "published_at": "2023-01-24",
+          "source_kind": "Peer-reviewed review",
+          "relevance": 0.83,
+          "stance": "REFUTES",
+          "analysis": {
+            "quote": "several reported no difference and the evidence for performance outcomes is weak",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Qualifies the claim. Counted as refuting the word reliably rather than the direction of the effect.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:24:14Z",
+          "word_count": 288
+        },
+        {
+          "cluster_id": 3,
+          "url": "demo://factora/passage/soreness-timeline",
+          "domain": "sportsinstitute.example",
+          "title": "Soreness timelines after unaccustomed exercise",
+          "text_or_snippet": "Soreness typically peaks between 24 and 48 hours and resolves within five days without intervention.",
+          "published_at": "2024-09-03",
+          "source_kind": "Sports institute",
+          "relevance": 0.72,
+          "stance": "NEUTRAL",
+          "analysis": {
+            "quote": "Soreness typically peaks between 24 and 48 hours and resolves within five days without intervention.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Context for the time window. No position on whether immersion helps.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:24:14Z",
+          "word_count": 109
+        }
+      ],
+      "audit": {
+        "sources_queried": [
+          "pubmed.ncbi.nlm.nih.gov",
+          "journals.example.org",
+          "sportsinstitute.example"
+        ],
+        "results_retrieved": 6,
+        "results_used": 3,
+        "quotes_checked": 3,
+        "quotes_dropped": 0,
+        "claims_dropped": 0,
+        "notes": [
+          "The word reliably in the article is not carried by any source. The gap is recorded on the stance card."
+        ]
+      }
+    },
+    {
+      "id": "cl-103",
+      "folio": "03",
+      "text": "Cold plunges were used by the ancient Greeks as a recovery method for athletes.",
+      "type": "Historical claim",
+      "article_quote": "The lineage goes back further: Greek athletes are said to have used cold baths between events.",
+      "article_quote_position": "Paragraph 3, sentence 1",
+      "time_sensitive": false,
+      "entities": [
+        "ancient Greece",
+        "athletics",
+        "cold bathing"
+      ],
+      "verdict": {
+        "label": "Insufficient evidence",
+        "tone": "quiet",
+        "one_line": "One low-quality page repeats the story. Nothing reliable was retrieved, so no verdict is issued."
+      },
+      "stance_direction": {
+        "lean": "unclear",
+        "counts": {
+          "supports": 1,
+          "refutes": 0,
+          "neutral": 1
+        },
+        "summary": "1 weak support, 1 contextual"
+      },
+      "evidence_strength": 0.3,
+      "strength_label": "Low",
+      "scores": {
+        "c": {
+          "label": "Source credibility",
+          "value": 0.34,
+          "weight": 0.3,
+          "points": 0.102,
+          "reason": "One general interest page and one museum fragment. No historical scholarship retrieved.",
+          "inputs": "historyblog.example (blog), museum.example.org (university museum)"
+        },
+        "r": {
+          "label": "Evidence relevance",
+          "value": 0.44,
+          "weight": 0.3,
+          "points": 0.132,
+          "reason": "Passages describe bathing habits, not athletic recovery.",
+          "inputs": "mean relevance 0.44"
+        },
+        "a": {
+          "label": "Independent agreement",
+          "value": 0.12,
+          "weight": 0.2,
+          "points": 0.024,
+          "reason": "One source, repeated wording. No independent agreement.",
+          "inputs": "2 clusters, 1 independent domain"
+        },
+        "t": {
+          "label": "Freshness",
+          "value": 0.2,
+          "weight": 0.1,
+          "points": 0.02,
+          "reason": "Undated blog page. Museum record is 2018.",
+          "inputs": "newest 2018-02, one undated"
+        },
+        "k": {
+          "label": "Contextual consistency",
+          "value": 0.22,
+          "weight": 0.1,
+          "points": 0.022,
+          "reason": "The article hedges with is said to have, which is honest but leaves the claim unverified.",
+          "inputs": "1 context gap flagged"
+        },
+        "s": {
+          "value": 0.3,
+          "formula": "0.30 C + 0.30 R + 0.20 A + 0.10 T + 0.10 K",
+          "result": "0.102 + 0.132 + 0.024 + 0.020 + 0.022 = 0.300"
+        }
+      },
+      "insufficient": {
+        "is": true,
+        "reasons": [
+          "Only two relevant passages were retrieved, and one of them is a commercial blog quoting the other.",
+          "No academic source on Greek athletics was returned. The claim is not therefore false, only unchecked.",
+          "The score is printed for transparency and is below the threshold used for a verdict."
+        ]
+      },
+      "evidence": [
+        {
+          "cluster_id": 1,
+          "url": "demo://factora/passage/greek-bathing-blog",
+          "domain": "historyblog.example",
+          "title": "Cold baths through history",
+          "text_or_snippet": "Greek athletes are often said to have used cold baths between events, though the article gives no primary source for the practice.",
+          "published_at": null,
+          "source_kind": "Blog",
+          "relevance": 0.5,
+          "stance": "SUPPORTS",
+          "analysis": {
+            "quote": "Greek athletes are often said to have used cold baths between events",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 2,
+            "rationale": "Repeats the claim with the same hedge and cites nothing. The overlap with the article suggests a shared unsourced origin.",
+            "context_gap": "The page and the article use nearly identical hedging. Neither traces the story to a primary text."
+          },
+          "fetched_at": "2026-10-31T09:24:14Z",
+          "word_count": 96
+        },
+        {
+          "cluster_id": 2,
+          "url": "demo://factora/passage/bath-house-museum",
+          "domain": "museum.example.org",
+          "title": "Bathing in the classical world",
+          "text_or_snippet": "Public bath houses were central to Greek and Roman social life. Cold pools formed one part of a sequence of heated and cooled rooms in later Roman design.",
+          "published_at": "2018-02-20",
+          "source_kind": "University museum",
+          "relevance": 0.38,
+          "stance": "NEUTRAL",
+          "analysis": {
+            "quote": "Cold pools formed one part of a sequence of heated and cooled rooms in later Roman design.",
+            "quote_verified": true,
+            "quote_mode": "exact",
+            "quote_insertions": 0,
+            "rationale": "Establishes that cold bathing existed, not that athletes used it for recovery.",
+            "context_gap": null
+          },
+          "fetched_at": "2026-10-31T09:24:15Z",
+          "word_count": 87
+        }
+      ],
+      "audit": {
+        "sources_queried": [
+          "pubmed.ncbi.nlm.nih.gov",
+          "historyblog.example",
+          "museum.example.org",
+          "archive.example.org"
+        ],
+        "results_retrieved": 3,
+        "results_used": 2,
+        "quotes_checked": 3,
+        "quotes_dropped": 1,
+        "claims_dropped": 0,
+        "notes": [
+          "The archive adapter returned an error. It is listed as failed rather than as having no findings.",
+          "One quote from the blog failed the substring guard because the retrieved page had been edited since the snippet was indexed."
+        ]
+      }
+    }
+  ],
+  "limitations": [
+    "The corpus is small. A claim with no matching passage is reported as thin evidence, not as false.",
+    "Historical claims are poorly served by the current adapters, which index mostly modern web pages.",
+    "One adapter failed during this run. Its absence lowers coverage for the final claim.",
+    "The score is a weighted sum, not a probability. Weights were fixed before the run and are shown in full."
+  ],
+  "failed_sources": [
+    {
+      "name": "Archive.org full-text search",
+      "status": "error",
+      "detail": "HTTP 502 from the search endpoint. Skipped after two attempts.",
+      "attempts": 2
+    }
+  ]
+}

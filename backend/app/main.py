@@ -38,7 +38,13 @@ from app.pipeline.verify import (
 )
 from s2_service import aretrieve_for_claims
 
-FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
+ROOT_DIR = Path(__file__).resolve().parents[2]
+FRONTEND_DIR = ROOT_DIR / "frontend"
+# The React app (frontend-app/) is the shipped UI when it has been built. The single-file
+# UI in frontend/ stays reachable at /lite: it needs no node, no npm and no build step, so
+# it is what you open on a machine that has only Python - and what scripts/ui_render_check
+# drives headlessly.
+APP_UI_DIR = ROOT_DIR / "frontend-app" / "dist"
 
 app = FastAPI(
     title="Factora VerifyAI API",
@@ -153,6 +159,11 @@ def pipeline_config() -> dict[str, Any]:
         "verify_mode": mode,
         "verify_mode_note": mode_note,
         "snapshot_available": Path(snapshot).exists(),
+        "ui": (
+            "frontend-app build at / (single-file UI at /lite)"
+            if UI_FLAVOUR == "frontend-app"
+            else "single-file UI at / (run scripts/bootstrap.sh --ui for the React build)"
+        ),
         "fact_check_key_configured": bool(os.getenv("GOOGLE_FACTCHECK_API_KEY")),
         "tavily_key_configured": bool(os.getenv("TAVILY_API_KEY")),
         "disclaimer": (
@@ -162,5 +173,11 @@ def pipeline_config() -> dict[str, Any]:
     }
 
 
-if FRONTEND_DIR.exists():
+UI_FLAVOUR = "none"
+if APP_UI_DIR.is_dir():
+    app.mount("/lite", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="ui-lite")
+    app.mount("/", StaticFiles(directory=str(APP_UI_DIR), html=True), name="ui")
+    UI_FLAVOUR = "frontend-app"
+elif FRONTEND_DIR.exists():
     app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="ui")
+    UI_FLAVOUR = "frontend"

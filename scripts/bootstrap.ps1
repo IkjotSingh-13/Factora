@@ -9,6 +9,7 @@
 
   .\scripts\bootstrap.ps1                  deps + tests
   .\scripts\bootstrap.ps1 -Ollama          also pull the local model (multi-GB)
+  .\scripts\bootstrap.ps1 -UI              also install npm deps and build the React UI
   .\scripts\bootstrap.ps1 -SkipTests       stop before the suite
   .\scripts\bootstrap.ps1 -Port 8010       port suggested at the end
 
@@ -22,6 +23,7 @@
 [CmdletBinding()]
 param(
     [switch]$Ollama,
+    [switch]$UI,
     [switch]$SkipTests,
     [string]$OllamaModel = "qwen2.5:7b",
     [int]$Port = 8000
@@ -112,6 +114,30 @@ if ($Ollama) {
     }
 }
 
+# ---------------------------------------------------------------- React UI
+# / serves frontend-app/dist when it exists; /lite serves the zero-build file
+# either way. The build is optional by design: no node, no npm, still a UI.
+if ($UI) {
+    Say "React UI (frontend-app -> dist)"
+    if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
+        Skip "npm is not on PATH - skipping. The single-file UI at /lite needs nothing."
+    } else {
+        Push-Location "frontend-app"
+        try {
+            & npm install --no-audit --no-fund
+            if ($LASTEXITCODE -ne 0) { throw "npm install failed" }
+            & npm run build
+            if ($LASTEXITCODE -ne 0) { throw "npm run build failed" }
+            if (Test-Path "dist\index.html") { Ok "built dist - served at http://localhost:$Port/" }
+            else { Skip "npm reported success but dist\index.html is missing - check the log above" }
+        } catch {
+            Skip "UI build stopped: $($_.Exception.Message). The /lite UI still works without node."
+        } finally {
+            Pop-Location
+        }
+    }
+}
+
 if (-not $SkipTests) {
     Say "Test suite (the real check that the install works)"
     & $venvPy -m pytest -q
@@ -120,6 +146,6 @@ if (-not $SkipTests) {
 
 Say "Ready"
 Write-Host "  run the API + UI:      .venv\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port $Port"
-Write-Host "  then open:             http://localhost:$Port/"
+Write-Host "  then open:             http://localhost:$Port/  (React build if you passed -UI, else /lite)"
 Write-Host "  what is reachable:     .venv\Scripts\python.exe scripts\check_connections.py"
 Write-Host "  offline demo (no key): .venv\Scripts\python.exe scripts\run_test_set.py"

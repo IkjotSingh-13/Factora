@@ -4,7 +4,7 @@ Commits: `45734dd` + `da319ef` + the setup-and-polish commit, all on `main` loca
 pushed yet — push directly or move them to a branch first:
 `git branch -m verifyai/complete-mvp && git push -u origin verifyai/complete-mvp`
 Base: `cbc4864` (merge PR #7, S2 retrieval + quote guard)
-Suite: `python -m pytest -q` → **416 passed, exit 0** (306 pre-existing + 29 S3 + 26 quote-guard + 34 verify API + 7 QA-set + 11 Ollama wiring + 2 provider tests moved in from the repo root)
+Suite: `python -m pytest -q` → **423 passed, exit 0** (306 pre-existing + 29 S3 + 26 quote-guard + 34 verify API + 7 QA-set + 11 Ollama wiring + 2 provider tests moved in from the repo root + 1 S2 bound test + 7 UI-serving contract tests)
 
 ---
 
@@ -19,7 +19,8 @@ The plan's MVP steps 4–6 were unimplemented. This closes them:
 | `s3_analysis.py` | Stance assignment (`SUPPORTS`/`REFUTES`/`NEUTRAL`) + the substring quote guard + verbatim quote selection. Deterministic lexical analyser by default, optional LLM path (`S3_MODE=auto\|llm\|lexicon`) that falls back and *says* it fell back. Stdlib-only imports. |
 | `backend/app/pipeline/article_quotes.py` | S1g: pins every claim to a verbatim sentence of the submitted article, strips reporting frames for checking (keeps them for display), flags time-sensitive claims, drops what it cannot ground. |
 | `backend/app/pipeline/verify.py` + `POST /api/verify` | One request, whole pipeline, per-stage status/milliseconds, warnings, `live`/`offline`/`snapshot`/`auto` evidence modes, every external call failing soft. `merge_and_score()` is now shared with the orchestrator so there is one scoring path. |
-| `frontend/index.html` | The UI: one file, no build step, no CDN, no external request. Claim cards (article quote, direction gauge, strength gauge, verdict-in-words, C/R/A/T/K breakdown), evidence cards (link + verified quote + scope chip), insufficient/conflicting states, audit footer with 11 counters and per-stage timing. Served at `/` by `StaticFiles`. |
+| `frontend-app/` | The product UI: the `frontend` branch's React/TypeScript/Tailwind design (hero, claim rail, claim detail with C/R/A/T/K, evidence cards, audit tab), wired to the pipeline by `src/lib/api.ts` — the branch's scripted `verifyEngine.ts` is deleted. Served at `/` when built (`make build-ui`); its evidence cards name the quote's scope and its header banner says when a run is not live. |
+| `frontend/index.html` | The zero-build fallback: one file, no build step, no CDN, no external request. Claim cards (article quote, direction gauge, strength gauge, verdict-in-words, C/R/A/T/K breakdown), evidence cards (link + verified quote + scope chip), insufficient/conflicting states, audit footer with 11 counters and per-stage timing. Served at `/lite`, and at `/` when the React build is absent. |
 | `data/samples.json`, `GET /api/samples` | Five prepared inputs, each written to land on a specific honest outcome, and `expect` text so the demo can be narrated without improvising. |
 | `data/test_set.json`, `scripts/run_test_set.py`, `docs/TEST_SET.md` | Labelled QA set + runner that records actual outcomes to `data/test_set_results.json`, checked by `tests/test_test_set.py` so the documented numbers cannot drift. |
 | `EvidenceItem.quote_scope` | `full_text` \| `snippet` \| unset — makes "verified against page text" and "verified against the snippet only" different, checkable statements on the wire and on screen. |
@@ -55,7 +56,7 @@ requires either a scoped negation, a unit-matched number conflict, or a polarity
 
 | Check | Result |
 |---|---|
-| `python -m pytest -q` | 416 passed, exit 0 |
+| `python -m pytest -q` | 423 passed, exit 0 |
 | `python scripts/check_connections.py` | 4 ok / 4 absent / 0 failed on this machine (no keys, no Ollama here) |
 | `python scripts/check_s3_contract.py --analyze s3_analysis:analyze --replay data/demo_snapshot.json` | "S3 is compatible with the S2 seam"; 10/10 items analysed; **0 fabricated quotes**, 0 empty-but-claimed |
 | `python scripts/run_test_set.py` | offline: **9/9 directions met, 0 invariant violations**, 1 case recorded unmeasured |

@@ -155,7 +155,7 @@ make checks          # or run them one at a time
 
 | Gate | Command | Meaning |
 | --- | --- | --- |
-| suite | `python -m pytest -q` | 416 tests: every stage, the seams, the wiring, the UI contract, the QA set |
+| suite | `python -m pytest -q` | 423 tests: every stage, the seams, the wiring, the UI contract, the QA set |
 | seam | `python scripts/check_s3_contract.py --analyze s3_analysis:analyze --replay data/demo_snapshot.json` | S3 accepts what S2 emits; counts fabricated quotes (must be 0) |
 | QA | `python scripts/run_test_set.py` | measured outcomes on labelled cases → `data/test_set_results.json` (9/9 on the blank pipeline, 8/8 with `en_core_web_sm`; `docs/TEST_SET.md` explains why both are correct) |
 | UI | `node scripts/ui_render_check.mjs` | the real render functions against a captured response (needs node; nothing else does) |
@@ -208,6 +208,10 @@ A `FAIL` from `check_connections.py` is worth reading; an `absent` row is a supp
 2. `python scripts/check_connections.py` → screenshot the report; `absent` rows are fine.
 3. `python scripts/run_test_set.py` once, so the corpus cache is warm.
 4. Run the UI once in `live`, once in `offline`, once in `snapshot` (`docs/DEMO.md` beats 1–4).
+5. Optional, if you want the React UI at `/` rather than the zero-build one: `make build-ui`
+   (or `./scripts/bootstrap.sh --ui`, `bootstrap.ps1 -UI`) then restart the server. Node 18+
+   and network access for `npm install` are the only requirements; `frontend-app/dist` is a
+   build product and is gitignored, so `make zip` is what carries it to a teammate.
 5. Keep the repo folder on the machine: the offline path needs no network at all.
 
 Nothing in this project writes outside the repo except `.cache/retrieval` and the optional

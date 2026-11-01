@@ -279,10 +279,19 @@ def test_openapi_documents_the_verify_route() -> None:
 # the frontend
 # ---------------------------------------------------------------------------
 def test_ui_is_served_at_the_root() -> None:
+    """`/` answers with a UI - whichever of the two this checkout actually has.
+
+    The React build in frontend-app/dist is the product UI and is served at `/` once it
+    has been built; until then the zero-build file in frontend/ takes `/` so that a
+    machine with no node still gets a working demo. Which one is mounted (and that the
+    API routes are not shadowed by it) is pinned in tests/test_ui_serving.py.
+    """
     response = client.get("/")
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
-    assert "VerifyAI" in response.text
+    body = response.text
+    assert 'id="root"' in body or "VerifyAI" in body, "root served neither the React shell nor the single-file UI"
+    assert "Directory listing" not in body, "the static mount fell back to a directory listing"
 
 
 def test_ui_has_no_external_dependencies() -> None:

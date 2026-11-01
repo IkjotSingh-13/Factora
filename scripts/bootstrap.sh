@@ -3,6 +3,7 @@
 #
 #   ./scripts/bootstrap.sh                 venv + deps + spacy + .env + tests
 #   ./scripts/bootstrap.sh --ollama        ...and pull the local model (~4.7 GB, opt-in)
+#   ./scripts/bootstrap.sh --ui            also install npm deps and build the React UI
 #   ./scripts/bootstrap.sh --skip-tests    stop before the suite
 #   ./scripts/bootstrap.sh --port 8010     change the port the summary suggests
 #
@@ -16,6 +17,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 ROOT=$(pwd)
 RUN_TESTS=1
+BUILD_UI=0
 PULL_OLLAMA=0
 OLLAMA_MODEL="${OLLAMA_MODEL:-qwen2.5:7b}"
 PORT=8000
@@ -25,6 +27,7 @@ while [ $# -gt 0 ]; do
     --ollama) PULL_OLLAMA=1 ;;
     --ollama-model) shift; OLLAMA_MODEL="${1:-qwen2.5:7b}" ;;
     --skip-tests) RUN_TESTS=0 ;;
+    --ui) BUILD_UI=1 ;;
     --port) shift; PORT="${1:-8000}" ;;
     -h|--help) sed -n '2,20p' "$0"; exit 0 ;;
     *) printf 'unknown flag: %s (try --help)\n' "$1"; exit 2 ;;
@@ -122,6 +125,23 @@ EOF
   fi
 fi
 
+# ---------------------------------------------------------------- React UI
+# / serves frontend-app/dist when it exists, /lite serves the zero-build file
+# either way. So the build is optional by design: no npm, no network, still a UI.
+if [ "$BUILD_UI" = "1" ]; then
+  say "React UI (frontend-app -> dist)"
+  if ! command -v npm >/dev/null 2>&1; then
+    warn "npm is not on PATH - skipping. The single-file UI at /lite needs nothing."
+  elif ! command -v node >/dev/null 2>&1; then
+    warn "node is not on PATH - skipping the UI build."
+  else
+    ( cd frontend-app && npm install --no-audit --no-fund && npm run build ) \
+      || fail "frontend-app build failed - the /lite UI still works; fix npm before shipping /"
+    [ -f frontend-app/dist/index.html ] || fail "npm run build reported success but dist/index.html is missing"
+    ok "built frontend-app/dist - served at http://localhost:$PORT/"
+  fi
+fi
+
 if [ "$RUN_TESTS" = "1" ]; then
   say "Test suite (this is the real check that the install works)"
   python -m pytest -q || fail "tests failed - fix before demoing"
@@ -130,7 +150,7 @@ fi
 say "Ready"
 cat <<EOF
   run the API + UI:      python -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port $PORT
-  then open:             http://localhost:$PORT/
+  then open:             http://localhost:$PORT/   (React build if you passed --ui, else /lite)
   what is reachable:     python scripts/check_connections.py
   offline demo (no key, no network):
                          python scripts/run_test_set.py

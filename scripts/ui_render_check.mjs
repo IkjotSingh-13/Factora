@@ -1,8 +1,13 @@
 /*
- * UI render check (no browser needed).
+ * UI render check (no browser needed). Covers both frontends this repo ships.
  *
- * Extracts the inline script from frontend/index.html, evaluates it against a minimal
- * DOM stub, and runs a REAL /api/verify payload through its render functions. That
+ * 1. The zero-build UI (frontend/index.html, served at /lite): extracts its inline
+ *    script, evaluates it against a minimal DOM stub, and runs a REAL /api/verify
+ *    payload through its render functions.
+ * 2. The shipped UI (the React app in frontend-app/, served at / once it is built):
+ *    asserted statically - that its components talk to the running pipeline rather
+ *    than a scripted mock, that non-live reports get labelled, and that nothing on
+ *    the page needs the internet. That
  * executes the same string-building the browser executes, so a broken claim card or a
  * missing audit field fails here rather than in front of a judge.
  *
@@ -275,9 +280,74 @@ api.showError("deliberate failure for the check");
 check(byId("error").innerHTML.includes("deliberate failure"), "error state did not render");
 check(results.length > 0, "results were cleared by an unrelated error (state leak)");
 
+/* ---------------- the shipped UI: the React app in frontend-app/ ----------------
+ * No browser is available in `make checks` (the repo does not vendor playwright), so
+ * this asserts the two things that actually went wrong during integration: which client
+ * the components call, and whether the page can render with the network switched off.
+ */
+const appDir = join(root, "frontend-app");
+const appHas = (rel) => {
+  try { readFileSync(join(appDir, rel)); return true; } catch { return false; }
+};
+const appRead = (rel) => readFileSync(join(appDir, rel), "utf8");
+let reactNote = "frontend-app absent";
+
+if (appHas("package.json")) {
+  const client = appRead("src/lib/api.ts");
+  check(
+    client.includes("/api/verify"),
+    "React client does not POST /api/verify - the shipped UI would not be showing pipeline data"
+  );
+  check(
+    !appHas("src/lib/verifyEngine.ts"),
+    "src/lib/verifyEngine.ts is back. It invented quotes, source URLs and scores in the browser, which is the one thing this project cannot ship"
+  );
+  check(
+    !/wikipedia\.org\/wiki\/|reuters\.com\/fact-check/.test(client),
+    "React client contains a hard-coded source URL instead of one taken from the response"
+  );
+  check(
+    /await verifyInput\(/.test(appRead("src/components/VerifyInput.tsx")),
+    "VerifyInput does not await the real client - it would render a scripted result"
+  );
+  const header = appRead("src/components/ReportHeader.tsx");
+  check(
+    header.includes("not-live-banner") && header.includes("demo_label"),
+    "ReportHeader has no banner marking a non-live report as non-live"
+  );
+
+  const indexHtml = appRead("index.html");
+  const hotLinks = indexHtml
+    .split("\n")
+    .filter((line) => /(src|href)\s*=\s*["']https?:/.test(line));
+  check(hotLinks.length === 0, `index.html hot-links remote assets: ${hotLinks.map((l) => l.trim()).join(" | ")}`);
+  check(
+    appHas("public/hero.mp4") && appHas("public/hero/thumb-1.webp"),
+    "hero video or card images are missing from public/ - the landing page would ship broken assets"
+  );
+
+  if (appHas("dist/index.html")) {
+    const built = appRead("dist/index.html");
+    const refs = [...built.matchAll(/(?:src|href)="([^"]+)"/g)]
+      .map((m) => m[1])
+      .filter((u) => !u.startsWith("data:"));
+    check(refs.every((u) => !/^https?:/.test(u)), "the built index.html still references a remote asset");
+    const missing = refs.filter((u) => !appHas(join("dist", u.replace(/^\//, ""))));
+    check(missing.length === 0, `built index.html points at files that are not in dist/: ${missing.join(", ")}`);
+    check(
+      appHas(join("dist", "hero.mp4")),
+      "dist/ has no hero.mp4 - it was built before public/ was vendored, or vite did not copy it"
+    );
+    reactNote = `React build checked (${refs.length} local refs, zero remote)`;
+  } else {
+    reactNote = "React source checked; dist/ not built yet (run: make build-ui)";
+  }
+}
+
 if (failures.length) {
   console.error(`UI render check FAILED (${failures.length}):\n  - ` + failures.join("\n  - "));
   process.exit(1);
 }
 console.log(`UI render check passed: ${claims.length} claim cards, ` +
-  `${(results.match(/class="ev"/g) || []).length} evidence cards, audit footer and banner present.`);
+  `${(results.match(/class="ev"/g) || []).length} evidence cards, audit footer and banner present. ` +
+  `Shipped UI: ${reactNote}.`);
