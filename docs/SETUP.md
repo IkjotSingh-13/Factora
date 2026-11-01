@@ -14,7 +14,10 @@ git clone https://github.com/IkjotSingh-13/Factora.git; cd Factora
 ```
 
 Both create `.venv`, install the three requirements files, fetch the spaCy model if the network
-allows, copy `.env.example` → `.env`, and run the test suite. They are idempotent — run them
+allows, copy `.env.example` → `.env`, and run the test suite. If the copy of the repo you have
+does not preserve permission bits (a zip unpacked with some tools, a mounted volume), the shell
+script simply will not be executable — `sh scripts/bootstrap.sh` runs it anyway, and
+`chmod +x scripts/*.sh` fixes it permanently. They are idempotent — run them
 again after pulling, or after adding a key. Then:
 
 ```bash
