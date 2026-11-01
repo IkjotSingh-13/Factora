@@ -62,6 +62,13 @@ zip:  ## the two archives for submission / teammates (built UI included)
 	@test -f frontend-app/dist/index.html \
 	  && echo "including the built React UI (frontend-app/dist) - no npm needed to run /" \
 	  || echo "WARNING: frontend-app/dist is missing - run 'make build-ui' first, or the zip ships /lite only"
+	@# A zip is a byte copy: it carries no git attributes, so whatever endings the work tree
+	@# has is what a Windows user unzips. `*.ps1 text eol=crlf` makes a *clone* CRLF; editing
+	@# a script with a python one-liner can leave this work tree LF. Normalize in the archive
+	@# source (idempotent, and git sees no change because eol=crlf is what it expects).
+	@for f in $$(ls scripts/*.ps1 scripts/*.bat 2>/dev/null); do \
+	  perl -pi -e 's/\r?\n/\r\n/g' "$$f"; done
+	@echo "Windows scripts normalized to CRLF for the archives"
 	cd .. && rm -f Factora-verifyai.zip Factora-source-only.zip && \
 	  zip -qr Factora-verifyai.zip Factora -x $(ZIP_EXCLUDES) && \
 	  zip -qr Factora-source-only.zip Factora -x $(ZIP_EXCLUDES) "Factora/.git/*" "Factora/frontend-app/dist/*"

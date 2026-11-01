@@ -212,6 +212,8 @@ A `FAIL` from `check_connections.py` is worth reading; an `absent` row is a supp
    (or `./scripts/bootstrap.sh --ui`, `bootstrap.ps1 -UI`) then restart the server. Node 18+
    and network access for `npm install` are the only requirements; `frontend-app/dist` is a
    build product and is gitignored, so `make zip` is what carries it to a teammate.
+   Windows: `docs/WINDOWS.md` §1b - same two npm commands, plus the long-path note that node
+   (not Python) is where `MAX_PATH` bites.
 5. Keep the repo folder on the machine: the offline path needs no network at all.
 
 Nothing in this project writes outside the repo except `.cache/retrieval` and the optional

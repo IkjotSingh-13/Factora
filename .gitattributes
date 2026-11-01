@@ -17,3 +17,13 @@
 
 *.zip binary
 *.png binary
+
+# The React UI ships media; `text=auto` detects these as binary today (they contain NUL
+# bytes), but an explicit rule means a checkout can never CRLF-expand a video into junk.
+*.mp4 binary
+*.webm binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.ico binary

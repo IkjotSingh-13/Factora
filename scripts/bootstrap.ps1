@@ -128,8 +128,10 @@ if ($UI) {
             if ($LASTEXITCODE -ne 0) { throw "npm install failed" }
             & npm run build
             if ($LASTEXITCODE -ne 0) { throw "npm run build failed" }
-            if (Test-Path "dist\index.html") { Ok "built dist - served at http://localhost:$Port/" }
-            else { Skip "npm reported success but dist\index.html is missing - check the log above" }
+            # forward slashes: PowerShell resolves them on Windows too, and the path is
+            # the one the FastAPI mount actually looks for (frontend-app/dist/index.html).
+            if (Test-Path "dist/index.html") { Ok "built dist - served at http://localhost:$Port/" }
+            else { Skip "npm reported success but dist/index.html is missing - check the log above" }
         } catch {
             Skip "UI build stopped: $($_.Exception.Message). The /lite UI still works without node."
         } finally {
