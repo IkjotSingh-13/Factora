@@ -53,15 +53,23 @@ clean:  ## caches only, never data or code
 	rm -rf .pytest_cache **/__pycache__ __pycache__ .mypy_cache
 	@echo "caches removed"
 
-ZIP_EXCLUDES = "Factora/.venv/*" "Factora/node_modules/*" "Factora/frontend-app/node_modules/*" \
-	  "Factora/**/__pycache__/*" "Factora/*.pyc" "Factora/*.tsbuildinfo" "Factora/.pytest_cache/*" \
-	  "Factora/frontend-app/.gitignore.bak" "Factora/**/.DS_Store"
+ZIP_EXCLUDES = \
+	  "*__pycache__*" "*.pyc" "*node_modules*" "*.venv*" \
+	  "*.pytest_cache*" "*.tsbuildinfo" "*.gitignore.bak" "**/.DS_Store" \
+	  "Factora/frontend-app/.vite" "Factora/**/npm-debug.log*"
 
 zip:  ## the two archives for submission / teammates (built UI included)
 	@test -f frontend-app/dist/index.html \
 	  && echo "including the built React UI (frontend-app/dist) - no npm needed to run /" \
 	  || echo "WARNING: frontend-app/dist is missing - run 'make build-ui' first, or the zip ships /lite only"
 	cd .. && rm -f Factora-verifyai.zip Factora-source-only.zip && \
-	  zip -qr Factora-verifyai.zip Factora $(ZIP_EXCLUDES) && \
-	  zip -qr Factora-source-only.zip Factora $(ZIP_EXCLUDES) -x "Factora/.git/*"
+	  zip -qr Factora-verifyai.zip Factora -x $(ZIP_EXCLUDES) && \
+	  zip -qr Factora-source-only.zip Factora -x $(ZIP_EXCLUDES) "Factora/.git/*" "Factora/frontend-app/dist/*"
+	@unzip -Z1 ../Factora-verifyai.zip | grep -cE "\.(venv|tsbuildinfo)" >/dev/null 2>&1; \
+	  for z in ../Factora-verifyai.zip ../Factora-source-only.zip; do \
+	    for junk in .venv node_modules __pycache__ .pytest_cache .tsbuildinfo .pyc; do \
+	      n=$$(unzip -Z1 $$z | grep -c "$$junk" || true); \
+	      [ "$$n" = "0" ] || { echo "FAIL: $$z contains $$n $$junk entries"; exit 1; }; \
+	    done; \
+	  done; echo "archives carry no venv, node_modules, caches or build info"
 	@ls -lh ../Factora-*.zip
